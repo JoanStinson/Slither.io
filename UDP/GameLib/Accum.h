@@ -2,6 +2,7 @@
 #include <SFML\Network.hpp>
 #include <iostream>
 
+enum PacketType { HELLO, WELCOME, NEWPLAYER, CONTADOR, MOVE, PING, GETCOIN, RECEIVECOIN, FINDEPARTIDA, EMPTY, ACK };
 
 class Accum {
 

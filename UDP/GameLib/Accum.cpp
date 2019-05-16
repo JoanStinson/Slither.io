@@ -4,8 +4,6 @@ Accum::Accum() {}
 
 Accum::~Accum() {}
 
-enum PacketType { HELLO, WELCOME, NEWPLAYER, CONTADOR, MOVE, PING, GETCOIN, RECEIVECOIN, FINDEPARTIDA, EMPTY, ACK };
-
 Accum::Accum(int id, int idmove, int deltax, int deltay, int posx, int posy) {
 	this->id = id;
 	this->idmove = idmove;
@@ -17,7 +15,6 @@ Accum::Accum(int id, int idmove, int deltax, int deltay, int posx, int posy) {
 
 sf::Packet Accum::AccumPacket() {
 	sf::Packet packet;
-	//canviar por move
 	enum PacketType enumContador = PacketType::MOVE;
 
 	posx += deltax;

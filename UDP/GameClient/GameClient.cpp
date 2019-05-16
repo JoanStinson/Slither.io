@@ -12,9 +12,6 @@
 #define PORT_SERVER 50000
 #define PERCENT_PACKETLOSS 5
 
-enum PacketType { HELLO, WELCOME, NEWPLAYER, CONTADOR, MOVE, PING, GETCOIN, RECEIVECOIN, FINDEPARTIDA, EMPTY, ACK };
-
-
 struct Player {
 	sf::IpAddress ip;
 	unsigned short port;
@@ -25,26 +22,17 @@ struct Player {
 	int score = 0;
 };
 
-std::vector<Player> aPlayers;
 sf::UdpSocket sock;
-bool hello = false;
-const int INITPOS[4] = { 200, 300, 400, 500 };
-int myId = -1;
-bool initPlay = false;
-bool disconnected = false;
-std::string strEP;
-bool empezarPartida = false;
-int idmove = 0;
-int deltax = 0;
-int deltay = 0;
-bool disappearText;
-std::list<Accum>aAccum;
+std::vector<Player> aPlayers;
+std::list<Accum> aAccum;
 sf::Vector2f coin_pos;
-bool winner = false;
-int idWinner = 0;
-bool coinPositioning = true;
-bool activarPerdida;
+std::string strEP;
+const int INITPOS[4] = { 200, 300, 400, 500 };
+int myId = -1, idmove = 0, deltax = 0, deltay = 0, idWinner = 0;
+bool hello = false, initPlay = false, disconnected = false, empezarPartida = false, disappearText,
+winner = false, coinPositioning = true, activarPerdida;
 
+// Sirve para ahorrar código a la hora de dibujar jugadores por pantalla
 void DrawPlayer(sf::RenderWindow& window, sf::Color color, sf::Vector2i pos) {
 	sf::RectangleShape rectAvatar(sf::Vector2f(60, 60));
 	rectAvatar.setFillColor(color);
@@ -52,6 +40,7 @@ void DrawPlayer(sf::RenderWindow& window, sf::Color color, sf::Vector2i pos) {
 	window.draw(rectAvatar);
 }
 
+// Dibuja texto dando instrucciones
 void DrawTextEP(sf::RenderWindow& window, sf::Clock clock) {
 	
 	if (empezarPartida && clock.getElapsedTime().asSeconds() < 5) {
@@ -66,7 +55,6 @@ void DrawTextEP(sf::RenderWindow& window, sf::Clock clock) {
 		text.setFillColor(sf::Color::White);
 		text.setStyle(sf::Text::Bold);
 		window.draw(text);
-		
 	}
 	else disappearText = true;
 }
@@ -99,7 +87,9 @@ void DibujaSFML() {
 					break;
 
 				case sf::Event::KeyPressed:
+
 					if (initPlay && aPlayers[myId-1].connected) {
+
 						if (event.key.code == sf::Keyboard::Left) {
 							deltax -= 1;
 							aPlayers[myId - 1].pos.x -= 1;
@@ -150,8 +140,8 @@ void DibujaSFML() {
 
 			switch (enumReceive) {
 
-				case WELCOME:
-				{
+				case WELCOME: {
+
 					int myPosX;
 					int myPosY;
 					pck >> myId >> myPosX >> myPosY >> coin_pos.x >> coin_pos.y;
@@ -183,8 +173,8 @@ void DibujaSFML() {
 				}
 				break;
 
-				case NEWPLAYER:
-				{
+				case NEWPLAYER: {
+
 					int newId = 0;
 					int newPos = 0;
 					int size = 0;
@@ -201,8 +191,8 @@ void DibujaSFML() {
 				}
 				break;
 
-				case CONTADOR:
-				{
+				case CONTADOR: {
+
 					strEP += "  ";
 					pck >> strEP;
 
@@ -211,8 +201,9 @@ void DibujaSFML() {
 				}
 				break;
 
-				case MOVE:
-				{
+				//TODO Cambiar-ho, no es sostenible
+				case MOVE: {
+
 					int size = 0;
 					pck >> size;
 
@@ -251,30 +242,35 @@ void DibujaSFML() {
 					}	
 				}
 				break;
-				case ACK:
-				{
-					//packetes criticos!!
+
+				//TODO paquetes criticos!!
+				case ACK: {
+					
 				}
 				break;
-				case PING:
+
+				case PING: {
+
 					int id;
 					int size;
 					pck >> size >> id;
 					std::cout << "Se ha desconectado el jugador " << id << "!" << std::endl;
-					aPlayers[id-1].connected = false;
+					aPlayers[id - 1].connected = false;
 					clDisconnected.restart();
 					disconnected = true;
+				}
 				break;
 
-				case RECEIVECOIN:
-				{
+				case RECEIVECOIN: {
+
 					pck >> coin_pos.x >> coin_pos.y;
 					coinPositioning = true;
 				}
 				break;
 
-				case FINDEPARTIDA:
-				{
+				case FINDEPARTIDA: {
+
+					int id;
 					pck >> id;
 					std::cout << "El jugador " << id << " ha ganado la partida!" << std::endl;
 					idWinner = id;
@@ -290,8 +286,9 @@ void DibujaSFML() {
 
 		window.clear();
 
-		if (disconnected)
-		{
+		if (disconnected) {
+
+			// Mostrar mensaje por pantalla
 			if (!aPlayers[myId- 1].connected) {
 				std::cout << "Disconnected" << std::endl;
 				sf::Font font;
@@ -410,7 +407,7 @@ void DibujaSFML() {
 			window.draw(coin);
 		}
 
-		//Ganador
+		// Ganador
 		if (winner) {
 			sf::Font font;
 			std::string pathFont = "arial.ttf";
