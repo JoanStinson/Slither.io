@@ -279,11 +279,11 @@ int main() {
 					size = aPlayers.size();
 					pck >> deltax >> deltay >> pos.x >> pos.y >> id >> idnum;
 
-					agrupadosAccum[id].idmove = idnum;
-					agrupadosAccum[id].deltax += deltax;
-					agrupadosAccum[id].deltay += deltay;
-					agrupadosAccum[id].posx = pos.x;
-					agrupadosAccum[id].posy = pos.y;
+					agrupadosAccum[id-1].idmove = idnum;
+					agrupadosAccum[id-1].deltax += deltax;
+					agrupadosAccum[id-1].deltay += deltay;
+					agrupadosAccum[id-1].posx = pos.x;
+					agrupadosAccum[id-1].posy = pos.y;
 
 					aPlayers[id - 1].clock.restart();
 				}
@@ -330,7 +330,7 @@ int main() {
 				}
 
 				// Enviar pos a los otros players
-				for (unsigned int i = 0; i < size; i++) {
+				for (int i = 0; i < size; i++) {
 
 					if (aPlayers[i].pos.x == -1 || aPlayers[i].pos.y == -1)
 						break;
@@ -340,45 +340,21 @@ int main() {
 					if (aPlayers[i].pos.y <= 540 && aPlayers[i].pos.y >= 400) {
 
 						std::cout << "La pos " << aPlayers[i].pos.x << ", " << aPlayers[i].pos.y << " es valida" << std::endl;
+
 						sf::Packet pckSend;
 						enum PacketType enumSend = PacketType::MOVE;
 
 						pckSend << enumSend << size;
 
-						// i = jugador en aquest moment
-						switch (i) {
+						// Primero enviamos la posición del jugador actual 
+						pckSend << aPlayers[i].pos.x << aPlayers[i].pos.y; 
 
-						case 0:
-							if (size == 1 && aPlayers[0].connected) pckSend << aPlayers[0].pos.x << aPlayers[0].pos.y;
-							else if (size == 2 && aPlayers[1].connected) pckSend << aPlayers[0].pos.x << aPlayers[0].pos.y << aPlayers[1].pos.x << aPlayers[1].pos.y;
-							else if (size == 3 && aPlayers[2].connected) pckSend << aPlayers[0].pos.x << aPlayers[0].pos.y << aPlayers[1].pos.x << aPlayers[1].pos.y << aPlayers[2].pos.x << aPlayers[2].pos.y;
-							else if (size == 4 && aPlayers[3].connected) pckSend << aPlayers[0].pos.x << aPlayers[0].pos.y << aPlayers[1].pos.x << aPlayers[1].pos.y << aPlayers[2].pos.x << aPlayers[2].pos.y << aPlayers[3].pos.x << aPlayers[3].pos.y;
-							break;
-
-						case 1:
-							if (size == 1 && aPlayers[1].connected) pckSend << aPlayers[1].pos.x << aPlayers[1].pos.y;
-							else if (size == 2 && aPlayers[0].connected) pckSend << aPlayers[1].pos.x << aPlayers[1].pos.y << aPlayers[0].pos.x << aPlayers[0].pos.y;
-							else if (size == 3 && aPlayers[2].connected) pckSend << aPlayers[1].pos.x << aPlayers[1].pos.y << aPlayers[0].pos.x << aPlayers[0].pos.y << aPlayers[2].pos.x << aPlayers[2].pos.y;
-							else if (size == 4 && aPlayers[3].connected) pckSend << aPlayers[1].pos.x << aPlayers[1].pos.y << aPlayers[0].pos.x << aPlayers[0].pos.y << aPlayers[2].pos.x << aPlayers[2].pos.y << aPlayers[3].pos.x << aPlayers[3].pos.y;
-							break;
-
-						case 2:
-							if (size == 1 && aPlayers[2].connected) pckSend << aPlayers[2].pos.x << aPlayers[2].pos.y;
-							else if (size == 2 && aPlayers[0].connected) pckSend << aPlayers[2].pos.x << aPlayers[2].pos.y << aPlayers[0].pos.x << aPlayers[0].pos.y;
-							else if (size == 3 && aPlayers[1].connected) pckSend << aPlayers[2].pos.x << aPlayers[2].pos.y << aPlayers[0].pos.x << aPlayers[0].pos.y << aPlayers[1].pos.x << aPlayers[1].pos.y;
-							else if (size == 4 && aPlayers[3].connected) pckSend << aPlayers[2].pos.x << aPlayers[2].pos.y << aPlayers[0].pos.x << aPlayers[0].pos.y << aPlayers[1].pos.x << aPlayers[1].pos.y << aPlayers[3].pos.x << aPlayers[3].pos.y;
-							break;
-
-						case 3:
-							if (size == 1 && aPlayers[3].connected) pckSend << aPlayers[3].pos.x << aPlayers[3].pos.y;
-							else if (size == 2 && aPlayers[0].connected) pckSend << aPlayers[3].pos.x << aPlayers[3].pos.y << aPlayers[0].pos.x << aPlayers[0].pos.y;
-							else if (size == 3 && aPlayers[1].connected) pckSend << aPlayers[3].pos.x << aPlayers[3].pos.y << aPlayers[0].pos.x << aPlayers[0].pos.y << aPlayers[1].pos.x << aPlayers[1].pos.y;
-							else if (size == 4 && aPlayers[2].connected) pckSend << aPlayers[3].pos.x << aPlayers[3].pos.y << aPlayers[0].pos.x << aPlayers[0].pos.y << aPlayers[1].pos.x << aPlayers[1].pos.y << aPlayers[2].pos.x << aPlayers[2].pos.y;
-							break;
-
-						default:
-							break;
+						// Luego la posición de los demás jugadores
+						for (int j = 0; j < size; j++) {
+							if (aPlayers[j].connected && aPlayers[j].ID != aPlayers[i].ID)
+								pckSend << aPlayers[j].pos.x << aPlayers[j].pos.y;
 						}
+
 						if (aPlayers[i].connected) {
 							SendNonBlocking(&sock, pckSend, aPlayers[i].ip, aPlayers[i].port);
 						}

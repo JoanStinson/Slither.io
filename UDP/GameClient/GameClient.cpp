@@ -20,6 +20,7 @@ struct Player {
 	bool connected;
 	sf::Vector2i pos;
 	int score = 0;
+	sf::Color color;
 };
 
 sf::UdpSocket sock;
@@ -207,6 +208,22 @@ void DibujaSFML() {
 					int size = 0;
 					pck >> size;
 
+					//std::cout << "Size: " << size << std::endl;
+
+					// El primer packet correspon al idlocal, es a dir, pel jugador 1 el primer paacket es el aPlayers[0], pel jugador 2 el aPlayers[1]
+
+					//pck << aPlayers[myId - 1].pos.x << aPlayers[myId - 1].pos.y; // 2
+
+					//for (int i = 0; i < size; i++) { // 1, 3, 4
+					//	pck >> aPlayers[i].pos.x >> aPlayers[i].pos.y;
+					//}
+
+					//for (int i = 0; i < size; i++) {
+					//	if (i == 0)
+					//		pck >> aPlayers[myId - 1].pos.x << aPlayers[myId - 1].pos.y;
+					//	else pck >> aPlayers[i].pos.x >> aPlayers[i].pos.y;
+					//}
+
 					switch (myId) {
 						case 1:
 							if (size == 1)		pck >> aPlayers[0].pos.x >> aPlayers[0].pos.y;
@@ -323,46 +340,9 @@ void DibujaSFML() {
 		// Pintar jugadores
 		if (aPlayers.size() > 0) {
 
-			switch (myId) {
-
-				case 1:
-					//if (!aPlayers[0].connected) DrawPlayer(window, sf::Color::White, aPlayers[0].pos);
-					if (aPlayers[0].connected) DrawPlayer(window, sf::Color::Blue, aPlayers[0].pos);
-					
-					if (aPlayers.size() > 1 && aPlayers[1].connected) DrawPlayer(window, sf::Color::Green, aPlayers[1].pos);
-					if (aPlayers.size() > 2 && aPlayers[2].connected) DrawPlayer(window, sf::Color::Red, aPlayers[2].pos);
-					if (aPlayers.size() > 3 && aPlayers[3].connected) DrawPlayer(window, sf::Color::Yellow, aPlayers[3].pos);
-				break;
-
-				case 2:
-					//if (!aPlayers[1].connected) DrawPlayer(window, sf::Color::White, aPlayers[1].pos);
-					if (aPlayers[1].connected) DrawPlayer(window, sf::Color::Green, aPlayers[1].pos);
-
-					if (aPlayers.size() > 1 && aPlayers[0].connected) DrawPlayer(window, sf::Color::Blue, aPlayers[0].pos);
-					if (aPlayers.size() > 2 && aPlayers[2].connected) DrawPlayer(window, sf::Color::Red, aPlayers[2].pos);
-					if (aPlayers.size() > 3 && aPlayers[3].connected) DrawPlayer(window, sf::Color::Yellow, aPlayers[3].pos);
-				break;
-
-				case 3:
-					//if (!aPlayers[2].connected) DrawPlayer(window, sf::Color::White, aPlayers[2].pos);
-					if (aPlayers[2].connected) DrawPlayer(window, sf::Color::Red, aPlayers[2].pos);
-					
-					if (aPlayers.size() > 1 && aPlayers[0].connected) DrawPlayer(window, sf::Color::Blue, aPlayers[0].pos);
-					if (aPlayers.size() > 2 && aPlayers[1].connected) DrawPlayer(window, sf::Color::Green, aPlayers[1].pos);
-					if (aPlayers.size() > 3 && aPlayers[3].connected) DrawPlayer(window, sf::Color::Yellow, aPlayers[3].pos);
-				break;
-
-				case 4:
-					//if (!aPlayers[3].connected) DrawPlayer(window, sf::Color::White, aPlayers[3].pos);
-					if (aPlayers[3].connected) DrawPlayer(window, sf::Color::Yellow, aPlayers[3].pos);
-					
-					if (aPlayers.size() > 1 && aPlayers[0].connected) DrawPlayer(window, sf::Color::Blue, aPlayers[0].pos);
-					if (aPlayers.size() > 2 && aPlayers[1].connected) DrawPlayer(window, sf::Color::Green, aPlayers[1].pos);
-					if (aPlayers.size() > 3 && aPlayers[2].connected) DrawPlayer(window, sf::Color::Red, aPlayers[2].pos);
-				break;
-
-				default:
-				break;
+			for (int i = 0; i < aPlayers.size(); i++) {
+				if (aPlayers[i].connected)
+					DrawPlayer(window, aPlayers[i].color, aPlayers[i].pos);
 			}
 		}
 	
@@ -433,6 +413,11 @@ int main() {
 		newPlayer.connected = false;
 		aPlayers.push_back(newPlayer);
 	}
+
+	aPlayers[0].color = sf::Color::Blue;
+	aPlayers[1].color = sf::Color::Green;
+	aPlayers[2].color = sf::Color::Red;
+	aPlayers[3].color = sf::Color::Yellow;
 
 	sock.setBlocking(false);
 	DibujaSFML();
