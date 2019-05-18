@@ -29,8 +29,8 @@ std::list<Accum> aAccum;
 sf::Vector2f coin_pos;
 std::string strEP;
 const int INITPOS[4] = { 200, 300, 400, 500 };
-int myId = -1, idmove = 0, deltax = 0, deltay = 0, idWinner = 0;
-bool hello = false, initPlay = false, disconnected = false, empezarPartida = false, disappearText,
+int myId = -1, idmove = 0, deltax = 0, deltay = 0, idWinner = 0, speed = 4;
+bool hello = false, initPlay = true, disconnected = false, empezarPartida = false, disappearText,
 winner = false, coinPositioning = true, activarPerdida;
 
 // Sirve para ahorrar código a la hora de dibujar jugadores por pantalla
@@ -50,7 +50,7 @@ void DrawTextEP(sf::RenderWindow& window, sf::Clock clock) {
 		if (!font.loadFromFile(pathFont))
 			std::cout << "No se pudo cargar la fuente" << std::endl;
 
-		sf::Text text(strEP.c_str() + aPlayers[myId - 1].ID, font);
+		sf::Text text(strEP.c_str() + aPlayers[0].ID, font);
 		text.setPosition(sf::Vector2f(60.f, 40.f));
 		text.setCharacterSize(22);
 		text.setFillColor(sf::Color::White);
@@ -89,24 +89,31 @@ void DibujaSFML() {
 
 				case sf::Event::KeyPressed:
 
-					if (initPlay && aPlayers[myId-1].connected) {
+					if (initPlay && aPlayers[0].connected) {
 
 						if (event.key.code == sf::Keyboard::Left) {
-							deltax -= 1;
-							aPlayers[myId - 1].pos.x -= 1;
+							if (aPlayers[0].pos.x - speed >= 0) {
+								deltax -= speed;
+								aPlayers[0].pos.x -= speed;
+							}
 						}
 						else if (event.key.code == sf::Keyboard::Right) {
-							deltax += 1;
-							aPlayers[myId - 1].pos.x += 1;
-
+							if (aPlayers[0].pos.x + speed <= 740) {
+								deltax += speed;
+								aPlayers[0].pos.x += speed;
+							}
 						}
 						else if (event.key.code == sf::Keyboard::Up) {
-							deltay -= 1;
-							aPlayers[myId - 1].pos.y -= 1;
+							if (aPlayers[0].pos.y - speed >= 0) {
+								deltay -= speed;
+								aPlayers[0].pos.y -= speed;
+							}
 						}
 						else if (event.key.code == sf::Keyboard::Down) {
-							deltay += 1;
-							aPlayers[myId - 1].pos.y += 1;
+							if (aPlayers[0].pos.y + speed <= 540) {
+								deltay += speed;
+								aPlayers[0].pos.y += speed;
+							}
 						}
 					}
 					break;
@@ -143,17 +150,41 @@ void DibujaSFML() {
 
 				case WELCOME: {
 
-					int myPosX;
-					int myPosY;
-					pck >> myId >> myPosX >> myPosY >> coin_pos.x >> coin_pos.y;
+					int myPosX = 0;
+					int myPosY = 0;
+					int size = 0;
+					pck >> myId >> myPosX >> myPosY >> coin_pos.x >> coin_pos.y >> size;
+
+					std::cout << "ID: " << myId <<" "<< myPosX<<" " << " "<<myPosY;
 
 					if (!hello) {
 						
-						aPlayers[0].ID = myId;
-						aPlayers[0].pos.x = myPosX;
-						aPlayers[0].pos.y = myPosY;
-						aPlayers[0].connected = true;
-		
+						// Creamos nuestro jugador
+						Player myPlayer;
+						myPlayer.ID = myId;
+						myPlayer.pos.x = myPosX;
+						myPlayer.pos.y = myPosY;
+						myPlayer.connected = true;
+						myPlayer.color = sf::Color::Blue;
+						aPlayers.push_back(myPlayer);
+
+						// Creamos los jugadores que ya estaban conectados
+						if (size > 0) {
+							std::cout << "pepe" << std::endl;
+							int id = 0, posx = 0, posy = 0;
+							for (int i = 0; i < size-1; i++) {
+								Player newPlayer;
+								pck >> id >> posx >> posy;
+								std::cout << " "<<id << " "<<posx << " "<<posy;
+								newPlayer.ID = id;
+								newPlayer.pos.x = posx;
+								newPlayer.pos.y = posy;
+								newPlayer.connected = true;
+								newPlayer.color = sf::Color::Red;
+								aPlayers.push_back(newPlayer);
+							}
+						}
+
 						std::cout << "Mensaje del servidor: WELCOME!" << std::endl;
 						std::cout << "Soy el jugador: " << myId << " con pos: " << myPosX << ", " << myPosY << std::endl;
 						window.setTitle("Slither.io - Jugador " + std::to_string(myId));
@@ -175,19 +206,39 @@ void DibujaSFML() {
 				break;
 
 				case NEWPLAYER: {
-
-					int newId = 0;
-					int newPos = 0;
-					int size = 0;
-					pck >> size;
 					
-					for (unsigned int i = 0; i < size; i++) {
-						pck >> aPlayers[i].ID >> aPlayers[i].pos.x >> aPlayers[i].pos.y;
-						aPlayers[i].connected = true;
-					}
+					
+					int id;
+					int posx;
+					int posy;
+					pck >> id >> posx >> posy;
 
-					if (size == 4) 
-						initPlay = true;
+					std::cout << "ID NEW: " << id << std::endl;
+
+					//if (id != 0) {
+						//std::cout << "ID NEWPLAYER: " << id;
+						Player newPlayer;
+						newPlayer.ID = id;
+						newPlayer.pos.x = posx;
+						newPlayer.pos.y = posy;
+						newPlayer.connected = true;
+						newPlayer.color = sf::Color::Red;
+
+						bool push = true;
+						for (int i = 0; i < aPlayers.size(); i++) {
+							if (newPlayer.ID == aPlayers[i].ID)
+								push = false;
+						}
+
+						if (push)
+						aPlayers.push_back(newPlayer);
+
+						std::cout << "SIZE: " << aPlayers.size() << std::endl;
+					//}
+
+
+					//if (aPlayers.size() == 4) 
+						//initPlay = true;
 											
 				}
 				break;
@@ -203,11 +254,19 @@ void DibujaSFML() {
 				break;
 
 				case MOVE: {
+					std::cout << "SIZE: " << aPlayers.size() << std::endl;
 					// Actualizamos solo el jugador que se ha movido
 					int size = 0;
 					int id = 0;
 					pck >> size >> id;
-					pck >> aPlayers[id].pos.x >> aPlayers[id].pos.y;
+
+					for (int i = 0; i < size; i++) {
+						if (aPlayers[i].ID == id)
+							pck >> aPlayers[i].pos.x >> aPlayers[i].pos.y;
+					}
+					
+
+					std::cout << "id " << id << std::endl;
 				}
 				break;
 
@@ -223,9 +282,12 @@ void DibujaSFML() {
 					int size;
 					pck >> size >> id;
 					std::cout << "Se ha desconectado el jugador " << id << "!" << std::endl;
-					aPlayers[id - 1].connected = false;
-					clDisconnected.restart();
-					disconnected = true;
+
+					if (aPlayers[0].ID == id) {
+						aPlayers[0].connected = false;
+						clDisconnected.restart();
+						disconnected = true;
+					}
 				}
 				break;
 
@@ -257,14 +319,14 @@ void DibujaSFML() {
 		if (disconnected) {
 
 			// Mostrar mensaje por pantalla
-			if (!aPlayers[myId- 1].connected) {
+			if (!aPlayers[0].connected) {
 				std::cout << "Disconnected" << std::endl;
 				sf::Font font;
 				std::string pathFont = "arial.ttf";
 				if (!font.loadFromFile(pathFont))
 					std::cout << "No se pudo cargar la fuente" << std::endl;
 
-				sf::Text text("  Disconnected player" + aPlayers[myId - 1].ID, font);
+				sf::Text text("  Disconnected player" + aPlayers[0].ID, font);
 				text.setPosition(sf::Vector2f(260, 50));
 				text.setCharacterSize(24);
 				text.setFillColor(sf::Color::Cyan);
@@ -290,7 +352,6 @@ void DibujaSFML() {
 
 		// Pintar jugadores
 		if (aPlayers.size() > 0) {
-
 			for (int i = 0; i < aPlayers.size(); i++) {
 				if (aPlayers[i].connected)
 					DrawPlayer(window, aPlayers[i].color, aPlayers[i].pos);
@@ -303,23 +364,23 @@ void DibujaSFML() {
 		// Si el jugador es mou li enviem cada 200ms la llista amb tota la acumulació (Acumulem cada cop que fem apretem una tecla)
 		if (empezarPartida && clockMove.getElapsedTime().asMilliseconds() >= 200 && (deltax != 0 || deltay != 0)) {
 
-			if (aPlayers[myId - 1].pos.x - coin_pos.x < 1.f && aPlayers[myId - 1].pos.y - coin_pos.y < 1.f && coinPositioning) {
+			if (aPlayers[0].pos.x - coin_pos.x < 1.f && aPlayers[0].pos.y - coin_pos.y < 1.f && coinPositioning) {
 				sf::Packet pa;
 				enum PacketType enumCoin = PacketType::GETCOIN;
 				pa << enumCoin << myId;
 				sock.send(pa, IP_SERVER, PORT_SERVER);
-				aPlayers[myId - 1].score++;
-				std::cout << "Has puntuado! Tienes un total de " << aPlayers[myId - 1].score << " puntos!" << std::endl;
+				aPlayers[0].score++;
+				std::cout << "Has puntuado! Tienes un total de " << aPlayers[0].score << " puntos!" << std::endl;
 				coinPositioning = false;
 			}
 
-			int prevX = aPlayers[myId - 1].pos.x;
-			int prevY = aPlayers[myId - 1].pos.y;
+			int prevX = aPlayers[0].pos.x;
+			int prevY = aPlayers[0].pos.y;
 			idmove++;
 
-			std::cout << "El jugador " << myId << " se ha movido! Delta Pos: (" << deltax << ", " << deltay << ") PosReal: (" << aPlayers[myId - 1].pos.x << ", " << aPlayers[myId - 1].pos.y << ")" << std::endl;
+			std::cout << "El jugador " << myId << " se ha movido! Delta Pos: (" << deltax << ", " << deltay << ") PosReal: (" << aPlayers[0].pos.x << ", " << aPlayers[0].pos.y << ")" << std::endl;
 
-			Accum accum(myId, idmove, deltax, deltay, aPlayers[myId-1].pos.x, aPlayers[myId-1].pos.y);
+			Accum accum(myId, idmove, deltax, deltay, aPlayers[0].pos.x, aPlayers[0].pos.y);
 			aAccum.push_back(accum);
 
 			sf::Packet pack = accum.AccumPacket();
@@ -345,7 +406,7 @@ void DibujaSFML() {
 			if (!font.loadFromFile(pathFont))
 				std::cout << "No se pudo cargar la fuente" << std::endl;
 			std::string ss = "                         El jugador " + std::to_string(idWinner) + " ha ganado la partida!";
-			sf::Text text(ss.c_str() + aPlayers[myId - 1].ID, font);
+			sf::Text text(ss.c_str() + aPlayers[0].ID, font);
 			text.setPosition(sf::Vector2f(60.f, 40.f));
 			text.setCharacterSize(22);
 			text.setFillColor(sf::Color::White);
@@ -358,17 +419,6 @@ void DibujaSFML() {
 }
 
 int main() {
-
-	for (unsigned int i = 0; i < 4; i++) {
-		Player newPlayer;
-		newPlayer.connected = false;
-		aPlayers.push_back(newPlayer);
-	}
-
-	aPlayers[0].color = sf::Color::Blue;
-	aPlayers[1].color = sf::Color::Green;
-	aPlayers[2].color = sf::Color::Red;
-	aPlayers[3].color = sf::Color::Yellow;
 
 	sock.setBlocking(false);
 	DibujaSFML();

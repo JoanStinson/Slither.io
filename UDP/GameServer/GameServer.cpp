@@ -25,7 +25,7 @@ std::vector<Accum> aAccum;
 std::vector<Accum> agrupadosAccum;
 sf::Vector2f coin_pos;
 sf::Vector2i pos;
-int idJugador = 1, initPos = 200, id, size, deltax, deltay, idnum, timeToDisconnectPlayer = 30; // Default = 180
+int idJugador = 1, initPos = 200, id, size = 0, deltax, deltay, idnum, timeToDisconnectPlayer = 180; // Default = 60
 bool firstTime;
 
 void ActualizarAccum(int id, int idnum, int deltax, int deltay, int posx, int posy);
@@ -82,27 +82,10 @@ int main() {
 	sf::Clock clockMove;
 
 	do {
+		
+		// Enviamos mensaje de PING por inactividad a todos los jugadores 
+		if (size > 0) {
 
-		int size = aPlayers.size();
-		if (size >= 4) {
-
-			if (!firstTime) {
-
-				// Por defecto acumuladores
-				Accum accum1(1, 1, 0, 0, 0, 0);
-				Accum accum2(2, 1, 0, 0, 0, 0);
-				Accum accum3(3, 1, 0, 0, 0, 0);
-				Accum accum4(4, 1, 0, 0, 0, 0);
-
-				agrupadosAccum.push_back(accum1);
-				agrupadosAccum.push_back(accum2);
-				agrupadosAccum.push_back(accum3);
-				agrupadosAccum.push_back(accum4);
-
-				firstTime = true;
-			}
-
-			// Enviamos mensaje de PING por inactividad a todos los jugadores 
 			for (int i = 0; i < size; i++) {
 
 				if (aPlayers[i].connected && aPlayers[i].clock.getElapsedTime().asSeconds() > timeToDisconnectPlayer) {
@@ -113,11 +96,14 @@ int main() {
 
 					for (int j = 0; j < size; j++)
 						SendNonBlocking(&sock, pckDisconnectPlayer, aPlayers[j].ip, aPlayers[j].port);
+
+					agrupadosAccum.erase(agrupadosAccum.begin() + i);
 				}
 			}
 		}
 			
 		sf::Packet pck;
+		sf::Packet pckSendMove;
 		sf::IpAddress ipRem; 
 		unsigned short portRem;
 		status = sock.receive(pck, ipRem, portRem); 
@@ -133,12 +119,11 @@ int main() {
 			enum PacketType enumNewPlayer = PacketType::NEWPLAYER;
 			enum PacketType enumContador = PacketType::CONTADOR;
 
-			sf::Packet pckSend;
-			
 			switch (enumReceive) {
 
 				case HELLO: {
 
+					// Si es el primer jugador
 					if (aPlayers.empty()) {
 
 						coin_pos.x = rand() % 400 + 300;
@@ -149,21 +134,31 @@ int main() {
 						Player firstPlayer;
 						firstPlayer.ip = ipRem;
 						firstPlayer.port = portRem;
-
 						firstPlayer.ID = idJugador;
-						firstPlayer.pos.x = initPos;
+						firstPlayer.pos.x = 200;
 						firstPlayer.pos.y = 500;
-
 						firstPlayer.connected = true;
 						aPlayers.push_back(firstPlayer);
+						size = aPlayers.size();
+
+						Accum accum(idJugador, 1, 0, 0, 0, 0);
+						agrupadosAccum.push_back(accum);
 
 						sf::Packet pckSend;
-						pckSend << enumWelcome << firstPlayer.ID << firstPlayer.pos.x << firstPlayer.pos.y << coin_pos.x << coin_pos.y;
+						pckSend << enumWelcome << firstPlayer.ID << firstPlayer.pos.x << firstPlayer.pos.y << coin_pos.x << coin_pos.y << 0;
 						SendNonBlocking(&sock, pckSend, ipRem, portRem);
 							
 						aPlayers[idJugador - 1].clock.restart();
+
+						sf::Packet p;
+						std::string s = "    La partida empieza! Gana quien consiga 7 monedas antes! \n Si un jugador no se mueve en Xs se desconecta!";
+
+						p << enumContador << s;
+						//for (int i = 0; i < size; i++)
+						SendNonBlocking(&sock, p, aPlayers[idJugador - 1].ip, aPlayers[idJugador - 1].port);
 					}
 
+					// Si no es el primer jugador
 					else {
 
 						if (!FindPlayer(portRem)) {
@@ -173,55 +168,59 @@ int main() {
 							Player newPlayer;
 							newPlayer.ip = ipRem;
 							newPlayer.port = portRem;
-
 							idJugador++;
 							initPos += 100;
-
 							newPlayer.ID = idJugador;
 							newPlayer.pos.x = initPos;
 							newPlayer.pos.y = 500;
-
 							newPlayer.connected = true;
 							aPlayers.push_back(newPlayer);
+							size = aPlayers.size();
 
-							// Le damos la id y pos al jugador correspondiente
-							sf::Packet pckWelcome;
-							pckWelcome << enumWelcome << newPlayer.ID << newPlayer.pos.x << newPlayer.pos.y << coin_pos.x << coin_pos.y;
-							SendNonBlocking(&sock, pckWelcome, newPlayer.ip, newPlayer.port);
+							Accum accum(idJugador, 1, 0, 0, 0, 0);
+							agrupadosAccum.push_back(accum);
 
-							// Notificamos a los otros jugadores del nuevo jugador
+							// Enviar el jugador nou als jugadores anteriors
 							sf::Packet pckNewPlayer;
-							int size = aPlayers.size();
-							pckNewPlayer << enumNewPlayer << size;
-							for (unsigned int i = 0; i < size; i++)
-								pckNewPlayer << aPlayers[i].ID << aPlayers[i].pos.x << aPlayers[i].pos.y;
+							pckNewPlayer << enumNewPlayer;
+							pckNewPlayer << idJugador << initPos << 500;
 
-							for (unsigned int i = 0; i < size; i++)
+							for (int i = 0; i < size-1; i++)
 								SendNonBlocking(&sock, pckNewPlayer, aPlayers[i].ip, aPlayers[i].port);
 
+							pckNewPlayer.clear();
+							std::cout << "size-1: " << size - 1 << std::endl;
+
+							// Enviar els jugadors anteriors al jugador nou
+							sf::Packet pckWelcome;
+							pckWelcome << enumWelcome << newPlayer.ID << newPlayer.pos.x << newPlayer.pos.y << coin_pos.x << coin_pos.y << size;
+							for (int i = 0; i < size - 1; i++) {
+								pckWelcome << aPlayers[i].ID << aPlayers[i].pos.x << aPlayers[i].pos.y;
+								//std::cout << " " << aPlayers[i].ID << " " << aPlayers[i].pos.x << " " << aPlayers[i].pos.y;
+							}
+							SendNonBlocking(&sock, pckWelcome, newPlayer.ip, newPlayer.port);
+							pckWelcome.clear();
 							aPlayers[idJugador - 1].clock.restart();
 
-							if (size == 4) {
-								aPlayers[0].clock.restart();
-								aPlayers[1].clock.restart();
-								aPlayers[2].clock.restart();
-								aPlayers[3].clock.restart();
+							//if (size >= 4) {
+								
+								//for (int i = 0; i < size; i++)
+									//aPlayers[i].clock.restart();
 
 								sf::Packet p;
 								std::string s = "    La partida empieza! Gana quien consiga 7 monedas antes! \n Si un jugador no se mueve en Xs se desconecta!";
 
 								p << enumContador << s;
-								for (unsigned int i = 0; i < size; i++)
-									SendNonBlocking(&sock, p, aPlayers[i].ip, aPlayers[i].port);
-										
-							}
+								//for (int i = 0; i < size; i++)
+									SendNonBlocking(&sock, p, aPlayers[idJugador-1].ip, aPlayers[idJugador-1].port);	
+							//}
 
 						}
 						// Si el cliente ya existe
 						else {
 							Player repeatPlayer;
 							// Buscamos ese puerto en el array y recogemos la id correspondiente
-							for (unsigned int i = 0; i < aPlayers.size(); i++) {
+							for (int i = 0; i < aPlayers.size(); i++) {
 								if (aPlayers[i].port == portRem) {
 									repeatPlayer.ID = aPlayers[i].ID;
 									repeatPlayer.pos = aPlayers[i].pos;
@@ -233,7 +232,7 @@ int main() {
 							// Le volvemos a enviar el mismo mensaje
 							// Le damos la id y pos al jugador correspondiente solo a ese cliente, porque no es un newplayer
 							sf::Packet pckWelcome;
-							pckWelcome << enumWelcome << repeatPlayer.ID << repeatPlayer.pos.x << repeatPlayer.pos.y << coin_pos.x << coin_pos.y;
+							pckWelcome << enumWelcome << repeatPlayer.ID << repeatPlayer.pos.x << repeatPlayer.pos.y << coin_pos.x << coin_pos.y << 0;
 							SendNonBlocking(&sock, pckWelcome, repeatPlayer.ip, repeatPlayer.port);
 						}
 					}
@@ -260,12 +259,13 @@ int main() {
 					if (aPlayers[id-1].pos.x == -1 || aPlayers[id-1].pos.y == -1) break;
 					std::cout << "Se intenta la pos " << aPlayers[id-1].pos.x << std::endl;
 
-					if (aPlayers[id-1].pos.y <= 540 && aPlayers[id-1].pos.y >= 400) {
+					if ((aPlayers[id-1].pos.y >= 0 && aPlayers[id-1].pos.y <= 540)
+						&& aPlayers[id - 1].pos.x >= 0 && aPlayers[id - 1].pos.x <= 740) {
 						std::cout << "La pos " << aPlayers[id-1].pos.x << ", " << aPlayers[id-1].pos.y << " es valida" << std::endl;
 
 						enum PacketType enumSend = PacketType::MOVE;
-						pckSend << enumSend << size << id-1;
-						pckSend << aPlayers[id-1].pos.x << aPlayers[id-1].pos.y;
+						pckSendMove << enumSend << size << aPlayers[id-1].ID;
+						pckSendMove << aPlayers[id-1].pos.x << aPlayers[id-1].pos.y;
 					}
 					else std::cout << "La pos " << aPlayers[id-1].pos.x << ", " << aPlayers[id-1].pos.y << " NO es valida" << std::endl;
 
@@ -306,13 +306,13 @@ int main() {
 
 			// Enviar el paquete a todos los jugadores cada 100 ms
 			if (clockMove.getElapsedTime().asMilliseconds() >= 100 && agrupadosAccum.size() > 0) {
-				
+
 				for (int i = 0; i < aPlayers.size(); i++) {
 					if (aPlayers[i].connected)
-						SendNonBlocking(&sock, pckSend, aPlayers[i].ip, aPlayers[i].port);
+						SendNonBlocking(&sock, pckSendMove, aPlayers[i].ip, aPlayers[i].port);
 				}
 
-				pckSend.clear();
+				pckSendMove.clear();
 				clockMove.restart();
 			}
 		}
