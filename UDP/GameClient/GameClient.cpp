@@ -202,61 +202,12 @@ void DibujaSFML() {
 				}
 				break;
 
-				//TODO Cambiar-ho, no es sostenible
 				case MOVE: {
-
+					// Actualizamos solo el jugador que se ha movido
 					int size = 0;
-					pck >> size;
-
-					//std::cout << "Size: " << size << std::endl;
-
-					// El primer packet correspon al idlocal, es a dir, pel jugador 1 el primer paacket es el aPlayers[0], pel jugador 2 el aPlayers[1]
-
-					//pck << aPlayers[myId - 1].pos.x << aPlayers[myId - 1].pos.y; // 2
-
-					//for (int i = 0; i < size; i++) { // 1, 3, 4
-					//	pck >> aPlayers[i].pos.x >> aPlayers[i].pos.y;
-					//}
-
-					//for (int i = 0; i < size; i++) {
-					//	if (i == 0)
-					//		pck >> aPlayers[myId - 1].pos.x << aPlayers[myId - 1].pos.y;
-					//	else pck >> aPlayers[i].pos.x >> aPlayers[i].pos.y;
-					//}
-
-					switch (myId) {
-						case 1:
-							if (size == 1)		pck >> aPlayers[0].pos.x >> aPlayers[0].pos.y;
-							else if (size == 2) pck >> aPlayers[0].pos.x >> aPlayers[0].pos.y >> aPlayers[1].pos.x >> aPlayers[1].pos.y;
-							else if (size == 3) pck >> aPlayers[0].pos.x >> aPlayers[0].pos.y >> aPlayers[1].pos.x >> aPlayers[1].pos.y >> aPlayers[2].pos.x >> aPlayers[2].pos.y;
-							else if (size == 4) pck >> aPlayers[0].pos.x >> aPlayers[0].pos.y >> aPlayers[1].pos.x >> aPlayers[1].pos.y >> aPlayers[2].pos.x >> aPlayers[2].pos.y >> aPlayers[3].pos.x >> aPlayers[3].pos.y;
-							break;
-
-						case 2:
-							if (size == 1)		pck >> aPlayers[1].pos.x >> aPlayers[1].pos.y;
-							else if (size == 2) pck >> aPlayers[1].pos.x >> aPlayers[1].pos.y >> aPlayers[0].pos.x >> aPlayers[0].pos.y;
-							else if (size == 3) pck >> aPlayers[1].pos.x >> aPlayers[1].pos.y >> aPlayers[0].pos.x >> aPlayers[0].pos.y >> aPlayers[2].pos.x >> aPlayers[2].pos.y;
-							else if (size == 4) pck >> aPlayers[1].pos.x >> aPlayers[1].pos.y >> aPlayers[0].pos.x >> aPlayers[0].pos.y >> aPlayers[2].pos.x >> aPlayers[2].pos.y >> aPlayers[3].pos.x >> aPlayers[3].pos.y;
-							break;
-
-						case 3:
-							if (size == 1)		pck >> aPlayers[2].pos.x >> aPlayers[2].pos.y;
-							else if (size == 2) pck >> aPlayers[2].pos.x >> aPlayers[2].pos.y >> aPlayers[0].pos.x >> aPlayers[0].pos.y;
-							else if (size == 3) pck >> aPlayers[2].pos.x >> aPlayers[2].pos.y >> aPlayers[0].pos.x >> aPlayers[0].pos.y >> aPlayers[1].pos.x >> aPlayers[1].pos.y;
-							else if (size == 4) pck >> aPlayers[2].pos.x >> aPlayers[2].pos.y >> aPlayers[0].pos.x >> aPlayers[0].pos.y >> aPlayers[1].pos.x >> aPlayers[1].pos.y >> aPlayers[3].pos.x >> aPlayers[3].pos.y;
-							break;
-
-						case 4:
-							if (size == 1)		pck >> aPlayers[3].pos.x >> aPlayers[3].pos.y;
-							else if (size == 2) pck >> aPlayers[3].pos.x >> aPlayers[3].pos.y >> aPlayers[0].pos.x >> aPlayers[0].pos.y;
-							else if (size == 3) pck >> aPlayers[3].pos.x >> aPlayers[3].pos.y >> aPlayers[0].pos.x >> aPlayers[0].pos.y >> aPlayers[1].pos.x >> aPlayers[1].pos.y;
-							else if (size == 4) pck >> aPlayers[3].pos.x >> aPlayers[3].pos.y >> aPlayers[0].pos.x >> aPlayers[0].pos.y >> aPlayers[1].pos.x >> aPlayers[1].pos.y >> aPlayers[2].pos.x >> aPlayers[2].pos.y;
-							break;
-
-						default:
-							break;
-						
-					}	
+					int id = 0;
+					pck >> size >> id;
+					pck >> aPlayers[id].pos.x >> aPlayers[id].pos.y;
 				}
 				break;
 

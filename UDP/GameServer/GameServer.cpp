@@ -28,6 +28,8 @@ sf::Vector2i pos;
 int idJugador = 1, initPos = 200, id, size, deltax, deltay, idnum, timeToDisconnectPlayer = 180; // Default = 180
 bool firstTime;
 
+void ActualizarAccum(int id, int idnum, int deltax, int deltay, int posx, int posy);
+
 bool FindPlayer(unsigned short portRem) {
 	bool result = true;
 
@@ -164,6 +166,8 @@ int main() {
 			enum PacketType enumNewPlayer = PacketType::NEWPLAYER;
 			enum PacketType enumContador = PacketType::CONTADOR;
 
+			sf::Packet pckSend;
+			
 			switch (enumReceive) {
 
 				case HELLO: {
@@ -278,12 +282,25 @@ int main() {
 
 					size = aPlayers.size();
 					pck >> deltax >> deltay >> pos.x >> pos.y >> id >> idnum;
+					ActualizarAccum(id - 1, idnum, deltax, deltay, pos.x, pos.y);
 
-					agrupadosAccum[id-1].idmove = idnum;
-					agrupadosAccum[id-1].deltax += deltax;
-					agrupadosAccum[id-1].deltay += deltay;
-					agrupadosAccum[id-1].posx = pos.x;
-					agrupadosAccum[id-1].posy = pos.y;
+					// Actualizamos lista jugadores en Server con los agrupados del jugador
+					aPlayers[id-1].pos.x = agrupadosAccum[id-1].posx;
+					aPlayers[id-1].pos.y = agrupadosAccum[id-1].posy;
+
+					// Verificamos que sea una posición válida y construimos el paquete, solo del jugador que se ha movido
+					// para enviarlo a los demás jugadores
+					if (aPlayers[id-1].pos.x == -1 || aPlayers[id-1].pos.y == -1) break;
+					std::cout << "Se intenta la pos " << aPlayers[id-1].pos.x << std::endl;
+
+					if (aPlayers[id-1].pos.y <= 540 && aPlayers[id-1].pos.y >= 400) {
+						std::cout << "La pos " << aPlayers[id-1].pos.x << ", " << aPlayers[id-1].pos.y << " es valida" << std::endl;
+
+						enum PacketType enumSend = PacketType::MOVE;
+						pckSend << enumSend << size << id-1;
+						pckSend << aPlayers[id-1].pos.x << aPlayers[id-1].pos.y;
+					}
+					else std::cout << "La pos " << aPlayers[id-1].pos.x << ", " << aPlayers[id-1].pos.y << " NO es valida" << std::endl;
 
 					aPlayers[id - 1].clock.restart();
 				}
@@ -320,49 +337,15 @@ int main() {
 					break;
 			}
 
+			// Enviar el paquete a todos los jugadores cada 100 ms
 			if (clockMove.getElapsedTime().asMilliseconds() >= 100 && agrupadosAccum.size() > 0) {
-				// Asignar pos al player que le corresponde
-				for (unsigned int i = 0; i < size; i++) {
-					if (id == aPlayers[i].ID) {
-						aPlayers[i].pos.x = agrupadosAccum[id-1].posx;
-						aPlayers[i].pos.y = agrupadosAccum[id-1].posy;
-					}
+				
+				for (int i = 0; i < aPlayers.size(); i++) {
+					if (aPlayers[i].connected)
+						SendNonBlocking(&sock, pckSend, aPlayers[i].ip, aPlayers[i].port);
 				}
 
-				// Enviar pos a los otros players
-				for (int i = 0; i < size; i++) {
-
-					if (aPlayers[i].pos.x == -1 || aPlayers[i].pos.y == -1)
-						break;
-
-					std::cout << "Se intenta la pos " << aPlayers[i].pos.x << std::endl;
-
-					if (aPlayers[i].pos.y <= 540 && aPlayers[i].pos.y >= 400) {
-
-						std::cout << "La pos " << aPlayers[i].pos.x << ", " << aPlayers[i].pos.y << " es valida" << std::endl;
-
-						sf::Packet pckSend;
-						enum PacketType enumSend = PacketType::MOVE;
-
-						pckSend << enumSend << size;
-
-						// Primero enviamos la posición del jugador actual 
-						pckSend << aPlayers[i].pos.x << aPlayers[i].pos.y; 
-
-						// Luego la posición de los demás jugadores
-						for (int j = 0; j < size; j++) {
-							if (aPlayers[j].connected && aPlayers[j].ID != aPlayers[i].ID)
-								pckSend << aPlayers[j].pos.x << aPlayers[j].pos.y;
-						}
-
-						if (aPlayers[i].connected) {
-							SendNonBlocking(&sock, pckSend, aPlayers[i].ip, aPlayers[i].port);
-						}
-
-					}
-					else std::cout << "La pos " << aPlayers[i].pos.x << ", " << aPlayers[i].pos.y << " NO es valida" << std::endl;
-
-				}
+				pckSend.clear();
 				clockMove.restart();
 			}
 		}
@@ -371,4 +354,12 @@ int main() {
 	} while (true);
 	sock.unbind();
 	return 0;
+}
+
+void ActualizarAccum(int id, int idnum, int deltax, int deltay, int posx, int posy) {
+	agrupadosAccum[id].idmove = idnum;
+	agrupadosAccum[id].deltax += deltax;
+	agrupadosAccum[id].deltay += deltay;
+	agrupadosAccum[id].posx = posx;
+	agrupadosAccum[id].posy = posy;
 }
