@@ -25,7 +25,7 @@ std::vector<Accum> aAccum;
 std::vector<Accum> agrupadosAccum;
 sf::Vector2f coin_pos;
 sf::Vector2i pos;
-int idJugador = 1, initPos = 200, id, size, deltax, deltay, idnum, timeToDisconnectPlayer = 180; // Default = 180
+int idJugador = 1, initPos = 200, id, size, deltax, deltay, idnum, timeToDisconnectPlayer = 30; // Default = 180
 bool firstTime;
 
 void ActualizarAccum(int id, int idnum, int deltax, int deltay, int posx, int posy);
@@ -77,12 +77,14 @@ int main() {
 		system("pause");
 		exit(0);
 	}
+
 	sf::Clock clock;
-		sf::Clock clockMove;
+	sf::Clock clockMove;
 
 	do {
 
-		if (aPlayers.size() >= 4) {
+		int size = aPlayers.size();
+		if (size >= 4) {
 
 			if (!firstTime) {
 
@@ -100,53 +102,18 @@ int main() {
 				firstTime = true;
 			}
 
-			if (aPlayers[0].connected && aPlayers[0].clock.getElapsedTime().asSeconds() > timeToDisconnectPlayer) {
-				enum PacketType enumDisconnect = PacketType::PING;
-				sf::Packet pckDisconnectPlayer;
-				int size = aPlayers.size();
-				// usuario a notificar del que se desconecta de la partida
-				aPlayers[0].connected = false;
-				pckDisconnectPlayer << enumDisconnect << size << aPlayers[0].ID;
+			// Enviamos mensaje de PING por inactividad a todos los jugadores 
+			for (int i = 0; i < size; i++) {
 
-				for (unsigned int i = 0; i < size; i++)
-					SendNonBlocking(&sock, pckDisconnectPlayer, aPlayers[i].ip, aPlayers[i].port);
-			}
+				if (aPlayers[i].connected && aPlayers[i].clock.getElapsedTime().asSeconds() > timeToDisconnectPlayer) {
+					enum PacketType enumDisconnect = PacketType::PING;
+					sf::Packet pckDisconnectPlayer;
+					aPlayers[i].connected = false;
+					pckDisconnectPlayer << enumDisconnect << size << aPlayers[i].ID;
 
-			if (aPlayers[1].connected && aPlayers[1].clock.getElapsedTime().asSeconds() > timeToDisconnectPlayer) {
-				enum PacketType enumDisconnect = PacketType::PING;
-				sf::Packet pckDisconnectPlayer;
-				int size = aPlayers.size();
-				// usuario a notificar del que se desconecta de la partida
-				aPlayers[1].connected = false;
-				pckDisconnectPlayer << enumDisconnect << size << aPlayers[1].ID;
-
-				for (unsigned int i = 0; i < size; i++)
-					SendNonBlocking(&sock, pckDisconnectPlayer, aPlayers[i].ip, aPlayers[i].port);
-			}
-
-			if (aPlayers[2].connected && aPlayers[2].clock.getElapsedTime().asSeconds() > timeToDisconnectPlayer) {
-				enum PacketType enumDisconnect = PacketType::PING;
-				sf::Packet pckDisconnectPlayer;
-				int size = aPlayers.size();
-				// usuario a notificar del que se desconecta de la partida
-				aPlayers[2].connected = false;
-				pckDisconnectPlayer << enumDisconnect << size << aPlayers[2].ID;
-
-				for (unsigned int i = 0; i < size; i++)
-					SendNonBlocking(&sock, pckDisconnectPlayer, aPlayers[i].ip, aPlayers[i].port);
-			}
-
-			if (aPlayers[3].connected && aPlayers[3].clock.getElapsedTime().asSeconds() > timeToDisconnectPlayer) {
-				enum PacketType enumDisconnect = PacketType::PING;
-				sf::Packet pckDisconnectPlayer;
-				int size = aPlayers.size();
-				// usuario a notificar del que se desconecta de la partida
-				aPlayers[3].connected = false;
-				pckDisconnectPlayer << enumDisconnect << size << aPlayers[3].ID;
-
-				for (unsigned int i = 0; i < size; i++)
-					//hacer funcion send para nonblocking y mirar partial
-					SendNonBlocking(&sock, pckDisconnectPlayer, aPlayers[i].ip, aPlayers[i].port);
+					for (int j = 0; j < size; j++)
+						SendNonBlocking(&sock, pckDisconnectPlayer, aPlayers[j].ip, aPlayers[j].port);
+				}
 			}
 		}
 			
