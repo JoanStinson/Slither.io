@@ -24,7 +24,7 @@ winner = false, ballPositioning = true, activarPerdida;
 
 // Funciones
 void DibujaSFML();
-void DrawPlayer(sf::RenderWindow& window, sf::Color color, sf::Vector2i pos);
+void DrawPlayer(sf::RenderWindow& window, sf::Color color, sf::Vector2i pos, sf::Vector2i size);
 void DrawTextEP(sf::RenderWindow& window, sf::Clock clock);
 static float GetRandomFloat();
 
@@ -61,30 +61,42 @@ void DibujaSFML() {
 
 				if (initPlay && aPlayers[0].connected) {
 
+					if (event.key.code == sf::Keyboard::Space)
+						speed = 4;
+
 					if (event.key.code == sf::Keyboard::Left) {
 						if (aPlayers[0].pos.x - speed >= 0) {
 							deltax -= speed;
 							aPlayers[0].pos.x -= speed;
 						}
 					}
-					else if (event.key.code == sf::Keyboard::Right) {
+					if (event.key.code == sf::Keyboard::Right) {
 						if (aPlayers[0].pos.x + speed <= 740) {
 							deltax += speed;
 							aPlayers[0].pos.x += speed;
 						}
 					}
-					else if (event.key.code == sf::Keyboard::Up) {
+					if (event.key.code == sf::Keyboard::Up) {
 						if (aPlayers[0].pos.y - speed >= 0) {
 							deltay -= speed;
 							aPlayers[0].pos.y -= speed;
 						}
 					}
-					else if (event.key.code == sf::Keyboard::Down) {
+					if (event.key.code == sf::Keyboard::Down) {
 						if (aPlayers[0].pos.y + speed <= 540) {
 							deltay += speed;
 							aPlayers[0].pos.y += speed;
 						}
 					}
+				}
+				break;
+
+			case sf::Event::KeyReleased:
+
+				if (initPlay && aPlayers[0].connected) {
+
+					if (event.key.code == sf::Keyboard::Space) 
+						speed = 2;
 				}
 				break;
 
@@ -207,14 +219,24 @@ void DibujaSFML() {
 
 			case MOVE: {
 				
+				bool valid;
 				int size;
 				int id;
-				pck >> size >> id;
+				pck >> valid >> size >> id;
 
-				// Actualizamos solo el jugador que se ha movido
-				for (int i = 0; i < size; i++) {
-					if (aPlayers[i].ID == id)
-						pck >> aPlayers[i].pos.x >> aPlayers[i].pos.y;
+				// Si es valida la posición actualizamos el jugador que se ha movido
+				if (valid) {
+					for (int i = 0; i < size; i++) {
+						if (aPlayers[i].ID == id)
+							pck >> aPlayers[i].pos.x >> aPlayers[i].pos.y;
+					}
+				}
+				// Si no, no lo actualizamos y mostramos mensaje por pantalla
+				else {
+					int posx;
+					int posy;
+					pck >> posx >> posy;
+					std::cout << "La pos (" << posx << ", " << posy << ") NO es valida!" << std::endl;
 				}
 			}
 			break;
@@ -241,9 +263,12 @@ void DibujaSFML() {
 			break;
 
 			case RECEIVEBALL: {
-
-				pck >> ballPos.x >> ballPos.y;
-				ballPositioning = true;
+				
+				if (!ballPositioning) {
+					pck >> ballPos.x >> ballPos.y;
+					std::cout << "BALL " << ballPos.x << " " << ballPos.y << std::endl;
+					ballPositioning = true;
+				}
 			}
 			break;
 
@@ -311,7 +336,7 @@ void DibujaSFML() {
 		if (aPlayers.size() > 0) {
 			for (int i = 0; i < aPlayers.size(); i++) {
 				if (aPlayers[i].connected)
-					DrawPlayer(window, aPlayers[i].color, aPlayers[i].pos);
+					DrawPlayer(window, aPlayers[i].color, sf::Vector2i(aPlayers[i].pos), sf::Vector2i(aPlayers[i].size));
 			}
 		}
 
@@ -321,12 +346,14 @@ void DibujaSFML() {
 		// Si el jugador se mueve envamos cada 200ms una lista con toda la acumulación a servidor (acumulamos cada vez que se pulsa una tecla)
 		if (empezarPartida && clockMove.getElapsedTime().asMilliseconds() >= 200 && (deltax != 0 || deltay != 0)) {
 
-			if (aPlayers[0].pos.x - ballPos.x < 1.5f && aPlayers[0].pos.y - ballPos.y < 1.5f && ballPositioning) {
+			if (abs((float)aPlayers[0].pos.x - ballPos.x) < 15.f && abs((float)aPlayers[0].pos.y - ballPos.y) < 15.f && (ballPositioning)) {
 				sf::Packet pa;
 				enum PacketType enumBall = PacketType::GETBALL;
 				pa << enumBall << aPlayers[0].ID;
 				sock.send(pa, IP_SERVER, PORT_SERVER);
 				aPlayers[0].score++;
+				/*aPlayers[0].size.x += 10;*/
+				aPlayers[0].size.y += 20;
 				std::cout << "Has puntuado! Tienes un total de " << aPlayers[0].score << " puntos!" << std::endl;
 				ballPositioning = false;
 			}
@@ -368,8 +395,8 @@ void DibujaSFML() {
 }
 
 // Sirve para ahorrar código a la hora de dibujar jugadores por pantalla
-void DrawPlayer(sf::RenderWindow& window, sf::Color color, sf::Vector2i pos) {
-	sf::RectangleShape rectAvatar(sf::Vector2f(60, 60));
+void DrawPlayer(sf::RenderWindow& window, sf::Color color, sf::Vector2i pos, sf::Vector2i size) {
+	sf::RectangleShape rectAvatar(sf::Vector2f(size.x, size.y));
 	rectAvatar.setFillColor(color);
 	rectAvatar.setPosition(sf::Vector2f(pos.x, pos.y)); 
 	window.draw(rectAvatar);
@@ -385,7 +412,7 @@ void DrawTextEP(sf::RenderWindow& window, sf::Clock clock) {
 			std::cout << "No se pudo cargar la fuente" << std::endl;
 
 		sf::Text text(strEP.c_str() + aPlayers[0].ID, font);
-		text.setPosition(sf::Vector2f(60.f, 40.f));
+		text.setPosition(sf::Vector2f(50.f, 50.f));
 		text.setCharacterSize(22);
 		text.setFillColor(sf::Color::White);
 		text.setStyle(sf::Text::Bold);

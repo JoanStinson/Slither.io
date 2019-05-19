@@ -9,13 +9,14 @@
 #include <time.h>   
 
 #define MAX_SCORE 5
+#define TIME_DISCONNECT_PLAYER 60
 
 // Variables
 std::vector<Player> aPlayers;
 std::vector<Accum> aAccum;
 sf::Vector2f ballPos;
 sf::Vector2i pos;
-int idJugador = 1, initPos = 40, id, size = 0, deltax, deltay, idnum, timeToDisconnectPlayer = 180; //TODO Default = 60
+int idJugador = 1, initPosX = 40, initPosY = 450, id, size = 0, deltax, deltay, idnum; 
 
 // Funciones
 bool FindPlayer(unsigned short portRem);
@@ -45,7 +46,7 @@ int main() {
 
 			for (int i = 0; i < size; i++) {
 
-				if (aPlayers[i].connected && aPlayers[i].clock.getElapsedTime().asSeconds() > timeToDisconnectPlayer) {
+				if (aPlayers[i].connected && aPlayers[i].clock.getElapsedTime().asSeconds() > TIME_DISCONNECT_PLAYER) {
 					enum PacketType enumDisconnect = PacketType::PING;
 					sf::Packet pckDisconnectPlayer;
 					aPlayers[i].connected = false;
@@ -89,8 +90,8 @@ int main() {
 						firstPlayer.ip = ipRem;
 						firstPlayer.port = portRem;
 						firstPlayer.ID = idJugador;
-						firstPlayer.pos.x = initPos;
-						firstPlayer.pos.y = 500;
+						firstPlayer.pos.x = initPosX;
+						firstPlayer.pos.y = initPosY;
 						firstPlayer.connected = true;
 						aPlayers.push_back(firstPlayer);
 						size = aPlayers.size();
@@ -125,10 +126,10 @@ int main() {
 							newPlayer.ip = ipRem;
 							newPlayer.port = portRem;
 							idJugador++;
-							initPos += 100;
+							initPosX += 100;
 							newPlayer.ID = idJugador;
-							newPlayer.pos.x = initPos;
-							newPlayer.pos.y = 500;
+							newPlayer.pos.x = initPosX;
+							newPlayer.pos.y = initPosY;
 							newPlayer.connected = true;
 							aPlayers.push_back(newPlayer);
 							size = aPlayers.size();
@@ -153,7 +154,7 @@ int main() {
 							// Enviamos el jugador nuevo a los anteriores jugadores
 							sf::Packet pckNewPlayer;
 							pckNewPlayer << enumNewPlayer;
-							pckNewPlayer << idJugador << initPos << 500;
+							pckNewPlayer << idJugador << initPosX << 500;
 							for (int i = 0; i < size - 1; i++)
 								SendNonBlocking(&sock, pckNewPlayer, aPlayers[i].ip, aPlayers[i].port);
 						}
@@ -202,14 +203,24 @@ int main() {
 						break;
 					std::cout << "Se intenta la pos (" << aPlayers[id-1].pos.x << ", " << aPlayers[id - 1].pos.y << ")" << std::endl;
 
+					// Si la posición es valida
+					bool move = true;
 					if ((aPlayers[id-1].pos.y >= 0 && aPlayers[id-1].pos.y <= 540) && aPlayers[id - 1].pos.x >= 0 && aPlayers[id - 1].pos.x <= 740) {
 						std::cout << "La pos (" << aPlayers[id-1].pos.x << ", " << aPlayers[id-1].pos.y << ") es valida" << std::endl;
 
 						enum PacketType enumSend = PacketType::MOVE;
-						pckSendMove << enumSend << size << aPlayers[id-1].ID;
+						pckSendMove << enumSend << move << size << aPlayers[id-1].ID;
 						pckSendMove << aPlayers[id-1].pos.x << aPlayers[id-1].pos.y;
 					}
-					else std::cout << "La pos (" << aPlayers[id-1].pos.x << ", " << aPlayers[id-1].pos.y << ") NO es valida!" << std::endl;
+					// Si la posición NO es valida
+					else {
+						std::cout << "La pos (" << aPlayers[id - 1].pos.x << ", " << aPlayers[id - 1].pos.y << ") NO es valida!" << std::endl;
+
+						move = false;
+						enum PacketType enumSend = PacketType::MOVE;
+						pckSendMove << enumSend << move << size << aPlayers[id - 1].ID;
+						pckSendMove << aPlayers[id - 1].pos.x << aPlayers[id - 1].pos.y;
+					}
 
 					aPlayers[id - 1].clock.restart();
 				}

@@ -10,6 +10,7 @@ struct Player {
 	unsigned short port;
 
 	sf::Vector2i pos;
+	sf::Vector2i size = sf::Vector2i(50, 100);
 	sf::Color color;
 	sf::Clock clock;
 	int ID = 0;
