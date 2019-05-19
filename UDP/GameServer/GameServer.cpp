@@ -1,4 +1,5 @@
 #include <SFML\Network.hpp>
+#include <CriticalPackage.cpp>
 #include <Accum.h>
 #include <iostream>
 #include <ctime>
@@ -28,7 +29,7 @@ float RandomFloat(float a, float b);
 // MAIN
 int main() {
 
-	sf::Clock clockMove;
+	sf::Clock clockMove, clockNewPlayer;
 	sf::UdpSocket sock;
 	sock.setBlocking(false);
 	sf::Socket::Status status = sock.bind(50000);
@@ -154,9 +155,13 @@ int main() {
 							// Enviamos el jugador nuevo a los anteriores jugadores
 							sf::Packet pckNewPlayer;
 							pckNewPlayer << enumNewPlayer;
-							pckNewPlayer << idJugador << initPosX << 500;
+							pckNewPlayer << idJugador << initPosX << initPosY;
 							for (int i = 0; i < size - 1; i++)
 								SendNonBlocking(&sock, pckNewPlayer, aPlayers[i].ip, aPlayers[i].port);
+
+							// Añadimos paquete crítico a la lista
+							for (int i = 0; i < size - 1; i++)
+								aPlayers[i].aCriticals.insert(std::pair<int, sf::Packet>((int)enumNewPlayer, pckNewPlayer));
 						}
 						// Si lo tenemos en la lista es un jugador repetido
 						else {
@@ -183,7 +188,15 @@ int main() {
 				break;
 
 				case ACK: {
-
+					int id;
+					pckReceive >> id;
+					std::cout << "ACK recibido del jugador " << id << std::endl;
+					for (int i = 0; i < aPlayers.size(); i++) {
+						if (aPlayers[i].ID == id) {
+							aPlayers[i].aCriticals.erase((int)enumNewPlayer);
+							aPlayers[i].ack = true;
+						}
+					}
 				}
 				break; 
 
@@ -256,7 +269,7 @@ int main() {
 				break;
 
 				default:
-					break;
+				break;
 			}
 
 			// Enviamos el paquete de move a todos los jugadores cada 100 ms
@@ -269,6 +282,18 @@ int main() {
 
 				pckSendMove.clear();
 				clockMove.restart();
+			}
+
+			// Enviamos el paquete critico de NEWPLAYER hasta que no recibamos confirmación del jugador (ACK)
+			if (clockNewPlayer.getElapsedTime().asMilliseconds() >= 200) {
+
+				for (int i = 0; i < aPlayers.size(); i++) {
+					if (!aPlayers[i].ack) {
+						SendNonBlocking(&sock, aPlayers[i].aCriticals.begin()->second, aPlayers[i].ip, aPlayers[i].port);
+					}
+				}
+
+				clockNewPlayer.restart();
 			}
 		}
 		

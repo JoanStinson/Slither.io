@@ -1,5 +1,6 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Network.hpp>
+#include <CriticalPackage.cpp>
 #include <iostream>
 #include <Accum.h>
 #include <list>
@@ -130,159 +131,159 @@ void DibujaSFML() {
 
 			switch (enumReceive) {
 
-			case WELCOME: {
+				case WELCOME: {
 
-				int myId = 0;
-				int myPosX = 0;
-				int myPosY = 0;
-				int size = 0;
+					int myId = 0;
+					int myPosX = 0;
+					int myPosY = 0;
+					int size = 0;
 
-				pck >> myId >> myPosX >> myPosY >> ballPos.x >> ballPos.y >> size;
+					pck >> myId >> myPosX >> myPosY >> ballPos.x >> ballPos.y >> size;
 
-				if (!hello) {
+					if (!hello) {
 
-					// Creamos nuestro jugador
-					Player myPlayer;
-					myPlayer.ID = myId;
-					myPlayer.pos.x = myPosX;
-					myPlayer.pos.y = myPosY;
-					myPlayer.connected = true;
-					myPlayer.color = sf::Color::Blue;
-					aPlayers.push_back(myPlayer);
+						// Creamos nuestro jugador
+						Player myPlayer;
+						myPlayer.ID = myId;
+						myPlayer.pos.x = myPosX;
+						myPlayer.pos.y = myPosY;
+						myPlayer.connected = true;
+						myPlayer.color = sf::Color::Blue;
+						aPlayers.push_back(myPlayer);
 
-					// Creamos los jugadores que ya estaban conectados
-					if (size > 0) {
-						for (int i = 0; i < size - 1; i++) {
-							Player newPlayer;
-							pck >> newPlayer.ID >> newPlayer.pos.x >> newPlayer.pos.y;
-							newPlayer.connected = true;
-							newPlayer.color = sf::Color::Red;
-							aPlayers.push_back(newPlayer);
+						// Creamos los jugadores que ya estaban conectados
+						if (size > 0) {
+							for (int i = 0; i < size - 1; i++) {
+								Player newPlayer;
+								pck >> newPlayer.ID >> newPlayer.pos.x >> newPlayer.pos.y;
+								newPlayer.connected = true;
+								newPlayer.color = sf::Color::Red;
+								aPlayers.push_back(newPlayer);
+							}
+						}
+
+						std::cout << "Mensaje del servidor: WELCOME!" << std::endl;
+						std::cout << "Soy el jugador " << myId << " con pos (" << myPosX << ", " << myPosY << ")" << std::endl;
+						window.setTitle("Slither.io - Jugador " + std::to_string(myId));
+						hello = true;
+					}
+
+					if (activarPerdida) {
+						float rndPacketLoss = GetRandomFloat();
+						if (rndPacketLoss < PERCENT_PACKETLOSS) {
+							//InputMemoryBitStream imbs(_message, bytesReceived);
+							enum PacketType pt = PacketType::EMPTY;
+							//imbs.Read(&pt, 3);
+							std::cout << rndPacketLoss << "Simulamos que se pierde msg de tipo " << pt << " - " << std::endl;
+							//return -1;
 						}
 					}
 
-					std::cout << "Mensaje del servidor: WELCOME!" << std::endl;
-					std::cout << "Soy el jugador " << myId << " con pos (" << myPosX << ", " << myPosY << ")" << std::endl;
-					window.setTitle("Slither.io - Jugador " + std::to_string(myId));
-					hello = true;
 				}
+				break;
 
-				if (activarPerdida) {
-					float rndPacketLoss = GetRandomFloat();
-					if (rndPacketLoss < PERCENT_PACKETLOSS) {
-						//InputMemoryBitStream imbs(_message, bytesReceived);
-						enum PacketType pt = PacketType::EMPTY;
-						//imbs.Read(&pt, 3);
-						std::cout << rndPacketLoss << "Simulamos que se pierde msg de tipo " << pt << " - " << std::endl;
-						//return -1;
-					}
-				}
+				case NEWPLAYER: {
 
-			}
-			break;
-
-			case NEWPLAYER: {
-
-				int id;
-				int posx;
-				int posy;
-
-				pck >> id >> posx >> posy;
-
-				Player newPlayer;
-				newPlayer.ID = id;
-				newPlayer.pos.x = posx;
-				newPlayer.pos.y = posy;
-				newPlayer.connected = true;
-				newPlayer.color = sf::Color::Red;
-
-				bool isNew = true;
-				for (int i = 0; i < aPlayers.size(); i++) {
-					if (newPlayer.ID == aPlayers[i].ID)
-						isNew = false;
-				}
-
-				if (isNew)
-					aPlayers.push_back(newPlayer);
-			}
-			break;
-
-			case CONTADOR: {
-
-				strEP += "  ";
-				pck >> strEP;
-
-				empezarPartida = true;
-				stclock.restart();
-			}
-			break;
-
-			case MOVE: {
-				
-				bool valid;
-				int size;
-				int id;
-				pck >> valid >> size >> id;
-
-				// Si es valida la posición actualizamos el jugador que se ha movido
-				if (valid) {
-					for (int i = 0; i < size; i++) {
-						if (aPlayers[i].ID == id)
-							pck >> aPlayers[i].pos.x >> aPlayers[i].pos.y;
-					}
-				}
-				// Si no, no lo actualizamos y mostramos mensaje por pantalla
-				else {
+					int id;
 					int posx;
 					int posy;
-					pck >> posx >> posy;
-					std::cout << "La pos (" << posx << ", " << posy << ") NO es valida!" << std::endl;
+
+					pck >> id >> posx >> posy;
+
+					Player newPlayer;
+					newPlayer.ID = id;
+					newPlayer.pos.x = posx;
+					newPlayer.pos.y = posy;
+					newPlayer.connected = true;
+					newPlayer.color = sf::Color::Red;
+
+					bool isNew = true;
+					for (int i = 0; i < aPlayers.size(); i++) {
+						if (newPlayer.ID == aPlayers[i].ID)
+							isNew = false;
+					}
+
+					if (isNew)
+						aPlayers.push_back(newPlayer);
+
+					// Enviamos ACK
+					sf::Packet newpck;
+					enum PacketType enumack = PacketType::ACK;
+					newpck << enumack << aPlayers[0].ID;
+					sock.send(newpck, IP_SERVER, PORT_SERVER);
 				}
-			}
-			break;
+				break;
 
-			//TODO paquetes criticos!!
-			case ACK: {
+				case CONTADOR: {
 
-			}
-			break;
+					strEP += "  ";
+					pck >> strEP;
 
-			case PING: {
-
-				int id;
-				int size;
-				pck >> size >> id;
-				std::cout << "Se ha desconectado el jugador " << id << "!" << std::endl;
-
-				if (aPlayers[0].ID == id) {
-					aPlayers[0].connected = false;
-					clDisconnected.restart();
-					disconnected = true;
+					empezarPartida = true;
+					stclock.restart();
 				}
-			}
-			break;
+				break;
 
-			case RECEIVEBALL: {
+				case MOVE: {
 				
-				if (!ballPositioning) {
-					pck >> ballPos.x >> ballPos.y;
-					std::cout << "BALL " << ballPos.x << " " << ballPos.y << std::endl;
-					ballPositioning = true;
+					bool valid;
+					int size;
+					int id;
+					pck >> valid >> size >> id;
+
+					// Si es valida la posición actualizamos el jugador que se ha movido
+					if (valid) {
+						for (int i = 0; i < size; i++) {
+							if (aPlayers[i].ID == id)
+								pck >> aPlayers[i].pos.x >> aPlayers[i].pos.y;
+						}
+					}
+					// Si no, no lo actualizamos y mostramos mensaje por pantalla
+					else {
+						int posx;
+						int posy;
+						pck >> posx >> posy;
+						std::cout << "La pos (" << posx << ", " << posy << ") NO es valida!" << std::endl;
+					}
 				}
-			}
-			break;
+				break;
 
-			case FINDEPARTIDA: {
+				case PING: {
 
-				int id;
-				pck >> id;
-				std::cout << "El jugador " << id << " ha ganado la partida!" << std::endl;
-				idWinner = id;
-				winner = true;
-			}
-			break;
+					int id;
+					int size;
+					pck >> size >> id;
+					std::cout << "Se ha desconectado el jugador " << id << "!" << std::endl;
 
-			default:
+					if (aPlayers[0].ID == id) {
+						aPlayers[0].connected = false;
+						clDisconnected.restart();
+						disconnected = true;
+					}
+				}
+				break;
+
+				case RECEIVEBALL: {
+				
+					if (!ballPositioning) {
+						pck >> ballPos.x >> ballPos.y;
+						std::cout << "BALL " << ballPos.x << " " << ballPos.y << std::endl;
+						ballPositioning = true;
+					}
+				}
+				break;
+
+				case FINDEPARTIDA: {
+
+					int id;
+					pck >> id;
+					std::cout << "El jugador " << id << " ha ganado la partida!" << std::endl;
+					idWinner = id;
+					winner = true;
+				}
+				break;
+
+				default:
 				break;
 			}
 
@@ -367,6 +368,7 @@ void DibujaSFML() {
 			Accum accum(aPlayers[0].ID, idmove, deltax, deltay, aPlayers[0].pos.x, aPlayers[0].pos.y);
 			aAccum.push_back(accum);
 
+			// MOVE
 			sf::Packet pack = accum.AccumPacket();
 			sock.send(pack, IP_SERVER, PORT_SERVER);
 

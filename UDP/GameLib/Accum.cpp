@@ -1,4 +1,5 @@
 #include "Accum.h"
+#include "CriticalPackage.cpp"
 
 Accum::Accum() {}
 
