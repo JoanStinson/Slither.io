@@ -335,7 +335,7 @@ void DibujaSFML() {
 			int prevY = aPlayers[0].pos.y;
 			idmove++;
 
-			std::cout << "El jugador " << aPlayers[0].ID << " se ha movido! Delta Pos: (" << deltax << ", " << deltay << ") PosReal: (" << aPlayers[0].pos.x << ", " << aPlayers[0].pos.y << ")" << std::endl;
+			std::cout << "El jugador " << aPlayers[0].ID << " se ha movido! Delta Pos (" << deltax << ", " << deltay << ") PosReal (" << aPlayers[0].pos.x << ", " << aPlayers[0].pos.y << ")" << std::endl;
 
 			Accum accum(aPlayers[0].ID, idmove, deltax, deltay, aPlayers[0].pos.x, aPlayers[0].pos.y);
 			aAccum.push_back(accum);

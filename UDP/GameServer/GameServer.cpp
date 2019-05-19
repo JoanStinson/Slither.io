@@ -200,17 +200,16 @@ int main() {
 					// Para enviarlo a los demás jugadores cada 100 ms para reducir tráfico
 					if (aPlayers[id-1].pos.x == -1 || aPlayers[id-1].pos.y == -1) 
 						break;
-					std::cout << "Se intenta la pos " << aPlayers[id-1].pos.x << std::endl;
+					std::cout << "Se intenta la pos (" << aPlayers[id-1].pos.x << ", " << aPlayers[id - 1].pos.y << ")" << std::endl;
 
-					if ((aPlayers[id-1].pos.y >= 0 && aPlayers[id-1].pos.y <= 540)
-						&& aPlayers[id - 1].pos.x >= 0 && aPlayers[id - 1].pos.x <= 740) {
-						std::cout << "La pos " << aPlayers[id-1].pos.x << ", " << aPlayers[id-1].pos.y << " es valida" << std::endl;
+					if ((aPlayers[id-1].pos.y >= 0 && aPlayers[id-1].pos.y <= 540) && aPlayers[id - 1].pos.x >= 0 && aPlayers[id - 1].pos.x <= 740) {
+						std::cout << "La pos (" << aPlayers[id-1].pos.x << ", " << aPlayers[id-1].pos.y << ") es valida" << std::endl;
 
 						enum PacketType enumSend = PacketType::MOVE;
 						pckSendMove << enumSend << size << aPlayers[id-1].ID;
 						pckSendMove << aPlayers[id-1].pos.x << aPlayers[id-1].pos.y;
 					}
-					else std::cout << "La pos " << aPlayers[id-1].pos.x << ", " << aPlayers[id-1].pos.y << " NO es valida" << std::endl;
+					else std::cout << "La pos (" << aPlayers[id-1].pos.x << ", " << aPlayers[id-1].pos.y << ") NO es valida!" << std::endl;
 
 					aPlayers[id - 1].clock.restart();
 				}
