@@ -17,5 +17,4 @@ struct Player {
 	int ID = 0;
 	int score = 0;
 	bool connected;
-	bool ack;
 };

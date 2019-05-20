@@ -190,11 +190,12 @@ int main() {
 				case ACK: {
 					int id;
 					pckReceive >> id;
-					std::cout << "ACK recibido del jugador " << id << std::endl;
+
+					// Borramos el paquete critico del jugador que recibimos el ACK
+					// Enviamos el begin del map, es decir el primer paquete critico de la lista, por tanto, cuando validamos ese borramos la primera pos
 					for (int i = 0; i < aPlayers.size(); i++) {
 						if (aPlayers[i].ID == id) {
-							aPlayers[i].aCriticals.erase((int)enumNewPlayer);
-							aPlayers[i].ack = true;
+							aPlayers[i].aCriticals.erase(0); 
 						}
 					}
 				}
@@ -288,7 +289,7 @@ int main() {
 			if (clockNewPlayer.getElapsedTime().asMilliseconds() >= 200) {
 
 				for (int i = 0; i < aPlayers.size(); i++) {
-					if (!aPlayers[i].ack) {
+					if (!aPlayers[i].aCriticals.empty()) {
 						SendNonBlocking(&sock, aPlayers[i].aCriticals.begin()->second, aPlayers[i].ip, aPlayers[i].port);
 					}
 				}
