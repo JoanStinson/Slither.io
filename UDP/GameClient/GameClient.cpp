@@ -25,7 +25,8 @@ winner = false, ballPositioning = true, activarPerdida;
 
 // Funciones
 void DibujaSFML();
-void DrawPlayer(sf::RenderWindow& window, sf::Color color, sf::Vector2i pos, sf::Vector2i size);
+void DrawBall(sf::RenderWindow& window, sf::Vector2f pos);
+void DrawPlayer(sf::RenderWindow& window, sf::Color color, sf::Vector2i pos, sf::Vector2i size, bool dead);
 void DrawTextEP(sf::RenderWindow& window, sf::Clock clock);
 static float GetRandomFloat();
 
@@ -60,7 +61,7 @@ void DibujaSFML() {
 
 			case sf::Event::KeyPressed:
 
-				if (initPlay && aPlayers[0].connected) {
+				if (initPlay && aPlayers[0].connected && !aPlayers[0].dead) {
 
 					if (event.key.code == sf::Keyboard::Space)
 						speed = 4;
@@ -168,16 +169,16 @@ void DibujaSFML() {
 						hello = true;
 					}
 
-					if (activarPerdida) {
-						float rndPacketLoss = GetRandomFloat();
-						if (rndPacketLoss < PERCENT_PACKETLOSS) {
-							//InputMemoryBitStream imbs(_message, bytesReceived);
-							enum PacketType pt = PacketType::EMPTY;
-							//imbs.Read(&pt, 3);
-							std::cout << rndPacketLoss << "Simulamos que se pierde msg de tipo " << pt << " - " << std::endl;
-							//return -1;
-						}
-					}
+					//if (activarPerdida) {
+					//	float rndPacketLoss = GetRandomFloat();
+					//	if (rndPacketLoss < PERCENT_PACKETLOSS) {
+					//		InputMemoryBitStream imbs(_message, bytesReceived);
+					//		enum PacketType pt = PacketType::EMPTY;
+					//		imbs.Read(&pt, 3);
+					//		std::cout << rndPacketLoss << "Simulamos que se pierde msg de tipo " << pt << " - " << std::endl;
+					//		return -1;
+					//	}
+					//}
 
 				}
 				break;
@@ -273,6 +274,19 @@ void DibujaSFML() {
 				}
 				break;
 
+				case DIE: {
+
+					int id1, id2;
+					pck >> id1 >> id2;
+
+					for (int i = 0; i < aPlayers.size(); i++) {
+						if (aPlayers[i].ID == id1 || aPlayers[i].ID == id2) {
+							aPlayers[i].dead = true;
+						}
+					}
+				}
+				break;
+
 				case FINDEPARTIDA: {
 
 					int id;
@@ -327,24 +341,21 @@ void DibujaSFML() {
 
 		// Bola
 		if (disappearText && !winner) {
-			sf::CircleShape coin(10);
-			coin.setFillColor(sf::Color::White);
-			coin.setPosition(ballPos);
-			window.draw(coin);
+			DrawBall(window, ballPos);
 		}
 
 		// Pintar jugadores
 		if (aPlayers.size() > 0) {
 			for (int i = 0; i < aPlayers.size(); i++) {
 				if (aPlayers[i].connected)
-					DrawPlayer(window, aPlayers[i].color, sf::Vector2i(aPlayers[i].pos), sf::Vector2i(aPlayers[i].size));
+					DrawPlayer(window, aPlayers[i].color, sf::Vector2i(aPlayers[i].pos), sf::Vector2i(aPlayers[i].size), aPlayers[i].dead);
 			}
 		}
 
 		if (empezarPartida)
 			DrawTextEP(window, stclock);
 
-		// Si el jugador se mueve envamos cada 200ms una lista con toda la acumulación a servidor (acumulamos cada vez que se pulsa una tecla)
+		// Si el jugador se mueve enviamos cada 200ms una lista con toda la acumulación a servidor (acumulamos cada vez que se pulsa una tecla)
 		if (empezarPartida && clockMove.getElapsedTime().asMilliseconds() >= 200 && (deltax != 0 || deltay != 0)) {
 
 			if (abs((float)aPlayers[0].pos.x - ballPos.x) < 15.f && abs((float)aPlayers[0].pos.y - ballPos.y) < 15.f && (ballPositioning)) {
@@ -375,6 +386,21 @@ void DibujaSFML() {
 			deltax = 0;
 			deltay = 0;
 			clockMove.restart();
+
+			// Mirar colisions
+			if (aPlayers.size() > 1) {
+				for (int i = 1; i < aPlayers.size(); i++) {
+					if (abs((float)aPlayers[0].pos.x - (float)aPlayers[i].pos.x) < 20.f && abs((float)aPlayers[0].pos.y - (float)aPlayers[i].pos.y) < 20.f) {
+						aPlayers[0].dead = true;
+						aPlayers[i].dead = true;
+						sf::Packet newpck;
+						enum PacketType enumack = PacketType::DIE;
+						newpck << enumack << aPlayers[0].ID << aPlayers[i].ID;
+						sock.send(newpck, IP_SERVER, PORT_SERVER);
+					}
+				}
+			}
+
 		}
 
 		// Ganador
@@ -396,12 +422,22 @@ void DibujaSFML() {
 	}
 }
 
+// Sirve para dibujar bolitas
+void DrawBall(sf::RenderWindow& window, sf::Vector2f pos) {
+	sf::CircleShape ball(10);
+	ball.setFillColor(sf::Color::White);
+	ball.setPosition(pos);
+	window.draw(ball);
+}
+
 // Sirve para ahorrar código a la hora de dibujar jugadores por pantalla
-void DrawPlayer(sf::RenderWindow& window, sf::Color color, sf::Vector2i pos, sf::Vector2i size) {
-	sf::RectangleShape rectAvatar(sf::Vector2f(size.x, size.y));
-	rectAvatar.setFillColor(color);
-	rectAvatar.setPosition(sf::Vector2f(pos.x, pos.y)); 
-	window.draw(rectAvatar);
+void DrawPlayer(sf::RenderWindow& window, sf::Color color, sf::Vector2i pos, sf::Vector2i size, bool dead) {
+	if (!dead) {
+		sf::RectangleShape rectAvatar(sf::Vector2f(size.x, size.y));
+		rectAvatar.setFillColor(color);
+		rectAvatar.setPosition(sf::Vector2f(pos.x, pos.y));
+		window.draw(rectAvatar);
+	}
 }
 
 // Dibuja texto dando instrucciones

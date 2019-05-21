@@ -1,5 +1,6 @@
 #pragma once
 #include <SFML\Network.hpp>
+#include "Player.h"
 
 class Accum {
 

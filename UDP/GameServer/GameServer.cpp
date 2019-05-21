@@ -222,14 +222,14 @@ int main() {
 					if ((aPlayers[id-1].pos.y >= 0 && aPlayers[id-1].pos.y <= 540) && aPlayers[id - 1].pos.x >= 0 && aPlayers[id - 1].pos.x <= 740) {
 						std::cout << "La pos (" << aPlayers[id-1].pos.x << ", " << aPlayers[id-1].pos.y << ") es valida" << std::endl;
 
+						// Notificamos a ese jugador que es valida
 						enum PacketType enumSend = PacketType::MOVE;
-						pckSendMove << enumSend << move << size << aPlayers[id-1].ID;
-						pckSendMove << aPlayers[id-1].pos.x << aPlayers[id-1].pos.y;
+						pckSendMove << enumSend << move << size << aPlayers[id - 1].ID;
+						pckSendMove << aPlayers[id - 1].pos.x << aPlayers[id - 1].pos.y;
 					}
 					// Si la posición NO es valida
 					else {
 						std::cout << "La pos (" << aPlayers[id - 1].pos.x << ", " << aPlayers[id - 1].pos.y << ") NO es valida!" << std::endl;
-
 						move = false;
 						enum PacketType enumSend = PacketType::MOVE;
 						pckSendMove << enumSend << move << size << aPlayers[id - 1].ID;
@@ -266,6 +266,27 @@ int main() {
 						for (unsigned int i = 0; i < size; i++)
 							SendNonBlocking(&sock, pp, aPlayers[i].ip, aPlayers[i].port);
 					}
+				}
+				break;
+
+				case DIE: {
+					int id1, id2;
+					pckReceive >> id1 >> id2;
+
+					enum PacketType enumDie = PacketType::DIE;
+					sf::Packet pckDie;
+					pckDie << enumDie << id1 << id2;
+
+					for (int i = 0; i < aPlayers.size(); i++) {
+						if (aPlayers[i].ID ==  id1 || aPlayers[i].ID == id2) {
+							aPlayers[i].dead = true;
+						}
+					}
+
+					for (int i = 0; i < aPlayers.size(); i++) {
+						SendNonBlocking(&sock, pckDie, aPlayers[i].ip, aPlayers[i].port);
+					}
+
 				}
 				break;
 
