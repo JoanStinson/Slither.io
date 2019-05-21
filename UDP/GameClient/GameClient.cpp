@@ -347,10 +347,10 @@ void DibujaSFML() {
 		// Pintar jugadores
 		if (aPlayers.size() > 0) {
 			for (int i = 0; i < aPlayers.size(); i++) {
-				if (aPlayers[i].connected && !aPlayers[i].dead)
-					DrawPlayer(window, aPlayers[i].color, sf::Vector2i(aPlayers[i].pos), sf::Vector2i(aPlayers[i].size));
-				else if (aPlayers[i].dead)
+				if (aPlayers[i].connected && aPlayers[i].dead)
 					DrawBall(window, sf::Vector2f(aPlayers[i].pos));
+				else if (aPlayers[i].connected && !aPlayers[i].dead)
+					DrawPlayer(window, aPlayers[i].color, sf::Vector2i(aPlayers[i].pos), sf::Vector2i(aPlayers[i].size));
 			}
 		}
 
@@ -392,13 +392,15 @@ void DibujaSFML() {
 			// Mirar colisions
 			if (aPlayers.size() > 1 && !aPlayers[0].dead) {
 				for (int i = 1; i < aPlayers.size(); i++) {
-					if (abs((float)aPlayers[0].pos.x - (float)aPlayers[i].pos.x) < 20.f && abs((float)aPlayers[0].pos.y - (float)aPlayers[i].pos.y) < 20.f) {
-						aPlayers[0].dead = true;
-						aPlayers[i].dead = true;
-						sf::Packet newpck;
-						enum PacketType enumack = PacketType::DIE;
-						newpck << enumack << aPlayers[0].ID << aPlayers[i].ID;
-						sock.send(newpck, IP_SERVER, PORT_SERVER);
+					if (!aPlayers[i].dead) {
+						if (abs((float)aPlayers[0].pos.x - (float)aPlayers[i].pos.x) < 20.f && abs((float)aPlayers[0].pos.y - (float)aPlayers[i].pos.y) < 20.f) {
+							aPlayers[0].dead = true;
+							aPlayers[i].dead = true;
+							sf::Packet newpck;
+							enum PacketType enumack = PacketType::DIE;
+							newpck << enumack << aPlayers[0].ID << aPlayers[i].ID;
+							sock.send(newpck, IP_SERVER, PORT_SERVER);
+						}
 					}
 				}
 			}
