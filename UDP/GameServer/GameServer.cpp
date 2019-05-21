@@ -1,5 +1,5 @@
 #include <SFML\Network.hpp>
-#include <CriticalPackage.cpp>
+#include <Player.h>
 #include <Accum.h>
 #include <iostream>
 #include <ctime>

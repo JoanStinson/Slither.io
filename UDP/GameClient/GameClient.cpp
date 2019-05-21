@@ -1,6 +1,6 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Network.hpp>
-#include <CriticalPackage.cpp>
+#include <Player.h>
 #include <iostream>
 #include <Accum.h>
 #include <list>
@@ -164,7 +164,7 @@ void DibujaSFML() {
 
 						std::cout << "Mensaje del servidor: WELCOME!" << std::endl;
 						std::cout << "Soy el jugador " << myId << " con pos (" << myPosX << ", " << myPosY << ")" << std::endl;
-						window.setTitle("Slither.io - Jugador " + std::to_string(myId));
+						window.setTitle("Slither.io - Jugador " + std::to_string(myId) + " Score: " + std::to_string(myPlayer.score));
 						hello = true;
 					}
 
@@ -353,7 +353,7 @@ void DibujaSFML() {
 				pa << enumBall << aPlayers[0].ID;
 				sock.send(pa, IP_SERVER, PORT_SERVER);
 				aPlayers[0].score++;
-				/*aPlayers[0].size.x += 10;*/
+				window.setTitle("Slither.io - Jugador " + std::to_string(aPlayers[0].ID) + " Score: " + std::to_string(aPlayers[0].score));
 				aPlayers[0].size.y += 20;
 				std::cout << "Has puntuado! Tienes un total de " << aPlayers[0].score << " puntos!" << std::endl;
 				ballPositioning = false;

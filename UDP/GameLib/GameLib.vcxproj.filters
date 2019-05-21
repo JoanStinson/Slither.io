@@ -18,12 +18,12 @@
     <ClInclude Include="Accum.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Player.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Accum.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="CriticalPackage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

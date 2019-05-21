@@ -20,10 +20,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Accum.h" />
+    <ClInclude Include="Player.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Accum.cpp" />
-    <ClCompile Include="CriticalPackage.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA0BC20B-DACD-41B3-B8B0-4356B380A206}</ProjectGuid>

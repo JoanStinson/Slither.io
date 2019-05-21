@@ -1,5 +1,5 @@
 #include "Accum.h"
-#include "CriticalPackage.cpp"
+#include "Player.h"
 
 Accum::Accum() {}
 
