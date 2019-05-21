@@ -26,7 +26,7 @@ winner = false, ballPositioning = true, activarPerdida;
 // Funciones
 void DibujaSFML();
 void DrawBall(sf::RenderWindow& window, sf::Vector2f pos);
-void DrawPlayer(sf::RenderWindow& window, sf::Color color, sf::Vector2i pos, sf::Vector2i size, bool dead);
+void DrawPlayer(sf::RenderWindow& window, sf::Color color, sf::Vector2i pos, sf::Vector2i size);
 void DrawTextEP(sf::RenderWindow& window, sf::Clock clock);
 static float GetRandomFloat();
 
@@ -347,8 +347,10 @@ void DibujaSFML() {
 		// Pintar jugadores
 		if (aPlayers.size() > 0) {
 			for (int i = 0; i < aPlayers.size(); i++) {
-				if (aPlayers[i].connected)
-					DrawPlayer(window, aPlayers[i].color, sf::Vector2i(aPlayers[i].pos), sf::Vector2i(aPlayers[i].size), aPlayers[i].dead);
+				if (aPlayers[i].connected && !aPlayers[i].dead)
+					DrawPlayer(window, aPlayers[i].color, sf::Vector2i(aPlayers[i].pos), sf::Vector2i(aPlayers[i].size));
+				else if (aPlayers[i].dead)
+					DrawBall(window, sf::Vector2f(aPlayers[i].pos));
 			}
 		}
 
@@ -388,7 +390,7 @@ void DibujaSFML() {
 			clockMove.restart();
 
 			// Mirar colisions
-			if (aPlayers.size() > 1) {
+			if (aPlayers.size() > 1 && !aPlayers[0].dead) {
 				for (int i = 1; i < aPlayers.size(); i++) {
 					if (abs((float)aPlayers[0].pos.x - (float)aPlayers[i].pos.x) < 20.f && abs((float)aPlayers[0].pos.y - (float)aPlayers[i].pos.y) < 20.f) {
 						aPlayers[0].dead = true;
@@ -431,13 +433,11 @@ void DrawBall(sf::RenderWindow& window, sf::Vector2f pos) {
 }
 
 // Sirve para ahorrar código a la hora de dibujar jugadores por pantalla
-void DrawPlayer(sf::RenderWindow& window, sf::Color color, sf::Vector2i pos, sf::Vector2i size, bool dead) {
-	if (!dead) {
-		sf::RectangleShape rectAvatar(sf::Vector2f(size.x, size.y));
-		rectAvatar.setFillColor(color);
-		rectAvatar.setPosition(sf::Vector2f(pos.x, pos.y));
-		window.draw(rectAvatar);
-	}
+void DrawPlayer(sf::RenderWindow& window, sf::Color color, sf::Vector2i pos, sf::Vector2i size) {
+	sf::RectangleShape rectAvatar(sf::Vector2f(size.x, size.y));
+	rectAvatar.setFillColor(color);
+	rectAvatar.setPosition(sf::Vector2f(pos.x, pos.y));
+	window.draw(rectAvatar);
 }
 
 // Dibuja texto dando instrucciones
