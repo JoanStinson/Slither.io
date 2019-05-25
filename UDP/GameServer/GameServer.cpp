@@ -33,6 +33,7 @@ int main() {
 	sf::UdpSocket sock;
 	sock.setBlocking(false);
 	sf::Socket::Status status = sock.bind(50000);
+	const std::string initMessage = "    La partida empieza! Gana quien consiga " + std::to_string(MAX_SCORE) + " bolas antes! \n Si un jugador no se mueve en " + std::to_string(TIME_DISCONNECT_PLAYER) + "s se desconecta!";
 
 	if (status != sf::Socket::Done) {
 		std::cout << "Error al vincular\n";
@@ -55,7 +56,6 @@ int main() {
 
 					for (int j = 0; j < size; j++)
 						SendNonBlocking(&sock, pckDisconnectPlayer, aPlayers[j].ip, aPlayers[j].port);
-
 					//aAccum.erase(aAccum.begin() + i);
 				}
 			}
@@ -109,8 +109,7 @@ int main() {
 							
 						// Le avisamos que ya puede empezar la partida
 						sf::Packet p;
-						std::string s = "    La partida empieza! Gana quien consiga "+std::to_string(MAX_SCORE)+" bolas antes! \n Si un jugador no se mueve en 60s se desconecta!";
-						p << enumContador << s;
+						p << enumContador << initMessage;
 						SendNonBlocking(&sock, p, aPlayers[idJugador - 1].ip, aPlayers[idJugador - 1].port);
 						aPlayers[idJugador - 1].clock.restart();
 					}
@@ -147,8 +146,7 @@ int main() {
 
 							// Le avisamos que ya puede empezar la partida
 							sf::Packet p;
-							std::string s = "    La partida empieza! Gana quien consiga " + std::to_string(MAX_SCORE) + " bolas antes! \n Si un jugador no se mueve en 60s se desconecta!";
-							p << enumContador << s;
+							p << enumContador << initMessage;
 							SendNonBlocking(&sock, p, aPlayers[idJugador-1].ip, aPlayers[idJugador-1].port);	
 							aPlayers[idJugador - 1].clock.restart();
 

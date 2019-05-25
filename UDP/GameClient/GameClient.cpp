@@ -26,6 +26,7 @@ winner = false, ballPositioning = true, activarPerdida;
 // Funciones
 void DibujaSFML();
 void DrawBall(sf::RenderWindow& window, sf::Vector2f pos);
+void DrawSprite(sf::RenderWindow& window, const std::string& s, float scale, sf::Vector2f pos);
 void DrawPlayer(sf::RenderWindow& window, sf::Color color, sf::Vector2i pos, sf::Vector2i size);
 void DrawTextEP(sf::RenderWindow& window, sf::Clock clock);
 static float GetRandomFloat();
@@ -383,17 +384,12 @@ void DibujaSFML() {
 		}
 
 		// Fondo
-		sf::Texture texture;
-		texture.loadFromFile("bg.png");
-
-		sf::Sprite sprite(texture);
-		sprite.setScale(1.f, 1.f);
-		sprite.setPosition(0.f, 0.f);
-		window.draw(sprite);
+		DrawSprite(window, "bg.png", 1.f, sf::Vector2f(0.f, 0.f));
 
 		// Bola
 		if (disappearText && !winner) {
 			DrawBall(window, ballPos);
+			//DrawSprite(window, "ball.png", 1.f, ballPos);
 		}
 
 		// Pintar jugadores
@@ -412,7 +408,7 @@ void DibujaSFML() {
 		// Si el jugador se mueve enviamos cada Xms una lista con toda la acumulación a servidor (acumulamos cada vez que se pulsa una tecla)
 		if (empezarPartida && clockMove.getElapsedTime().asMilliseconds() >= 200 && (deltax != 0 || deltay != 0)) {
 
-			if (abs((float)aPlayers[0].pos.x - ballPos.x) < 15.f && abs((float)aPlayers[0].pos.y - ballPos.y) < 15.f && (ballPositioning)) {
+			if (abs((float)aPlayers[0].pos.x - ballPos.x) < 25.f && abs((float)aPlayers[0].pos.y - ballPos.y) < 25.f && (ballPositioning)) {
 				sf::Packet pa;
 				enum PacketType enumBall = PacketType::GETBALL;
 				pa << enumBall << aPlayers[0].ID;
@@ -481,9 +477,20 @@ void DibujaSFML() {
 // Sirve para dibujar bolitas
 void DrawBall(sf::RenderWindow& window, sf::Vector2f pos) {
 	sf::CircleShape ball(10);
-	ball.setFillColor(sf::Color::White);
+	ball.setFillColor(sf::Color::Yellow);
 	ball.setPosition(pos);
 	window.draw(ball);
+}
+
+// Para dibujar sprites
+void DrawSprite(sf::RenderWindow& window, const std::string& s, float scale, sf::Vector2f pos) {
+	sf::Texture texture;
+	texture.loadFromFile(s);
+
+	sf::Sprite sprite(texture);
+	sprite.setScale(scale, scale);
+	sprite.setPosition(pos.x, pos.y);
+	window.draw(sprite);
 }
 
 // Sirve para ahorrar código a la hora de dibujar jugadores por pantalla
