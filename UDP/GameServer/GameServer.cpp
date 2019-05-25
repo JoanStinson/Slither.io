@@ -17,7 +17,8 @@ std::vector<Player> aPlayers;
 std::vector<Accum> aAccum;
 sf::Vector2f ballPos;
 sf::Vector2i pos;
-int idJugador = 1, initPosX = 40, initPosY = 450, id, size = 0, deltax, deltay, idmove; 
+int idJugador = 1, initPosX = 40, initPosY = 450, id, size = 0, deltax, deltay, idmove, totalPlayers;
+bool sendInit = false;
 
 // Funciones
 bool FindPlayer(unsigned short portRem);
@@ -28,6 +29,10 @@ float RandomFloat(float a, float b);
 
 // MAIN
 int main() {
+
+	std::cout << "Por favor introduce el numero de jugadores que jugaran la partida: ";
+	std::cin >> totalPlayers;
+	std::cout << "Esperando a que se conecten los jugadores..." << std::endl;
 
 	sf::Clock clockMove, clockNewPlayer;
 	sf::UdpSocket sock;
@@ -56,7 +61,6 @@ int main() {
 
 					for (int j = 0; j < size; j++)
 						SendNonBlocking(&sock, pckDisconnectPlayer, aPlayers[j].ip, aPlayers[j].port);
-					//aAccum.erase(aAccum.begin() + i);
 				}
 			}
 		}
@@ -106,12 +110,6 @@ int main() {
 						ballPos.y = rand() % 400 + 300;
 						pckSend << enumWelcome << firstPlayer.ID << firstPlayer.pos.x << firstPlayer.pos.y << ballPos.x << ballPos.y << 0;
 						SendNonBlocking(&sock, pckSend, ipRem, portRem);
-							
-						// Le avisamos que ya puede empezar la partida
-						sf::Packet p;
-						p << enumContador << initMessage;
-						SendNonBlocking(&sock, p, aPlayers[idJugador - 1].ip, aPlayers[idJugador - 1].port);
-						aPlayers[idJugador - 1].clock.restart();
 					}
 
 					// Si no es el primer jugador
@@ -143,12 +141,6 @@ int main() {
 							for (int i = 0; i < size - 1; i++)
 								pckWelcome << aPlayers[i].ID << aPlayers[i].pos.x << aPlayers[i].pos.y;
 							SendNonBlocking(&sock, pckWelcome, newPlayer.ip, newPlayer.port);
-
-							// Le avisamos que ya puede empezar la partida
-							sf::Packet p;
-							p << enumContador << initMessage;
-							SendNonBlocking(&sock, p, aPlayers[idJugador-1].ip, aPlayers[idJugador-1].port);	
-							aPlayers[idJugador - 1].clock.restart();
 
 							// Enviamos el jugador nuevo a los anteriores jugadores
 							sf::Packet pckNewPlayer;
@@ -192,9 +184,8 @@ int main() {
 					// Borramos el paquete critico del jugador que recibimos el ACK
 					// Enviamos el begin del map, es decir el primer paquete critico de la lista, por tanto, cuando validamos ese borramos la primera pos
 					for (int i = 0; i < aPlayers.size(); i++) {
-						if (aPlayers[i].ID == id) {
+						if (aPlayers[i].ID == id) 
 							aPlayers[i].aCriticals.erase(0); 
-						}
 					}
 				}
 				break; 
@@ -278,9 +269,10 @@ int main() {
 						sf::Packet pp;
 						ballPos.x = RandomFloat(100, 400);
 						ballPos.y = RandomFloat(100, 400);
-						pp << pa << ballPos.x << ballPos.y;
+						aPlayers[id - 1].size.y += 20;
+						pp << pa << ballPos.x << ballPos.y << id << aPlayers[id - 1].size.y;
 
-						for (unsigned int i = 0; i < size; i++)
+						for (int i = 0; i < aPlayers.size(); i++)
 							SendNonBlocking(&sock, pp, aPlayers[i].ip, aPlayers[i].port);
 					}
 				}
@@ -295,14 +287,12 @@ int main() {
 					pckDie << enumDie << id1 << id2;
 
 					for (int i = 0; i < aPlayers.size(); i++) {
-						if (aPlayers[i].ID ==  id1 || aPlayers[i].ID == id2) {
+						if (aPlayers[i].ID ==  id1 || aPlayers[i].ID == id2) 
 							aPlayers[i].dead = true;
-						}
 					}
 
-					for (int i = 0; i < aPlayers.size(); i++) {
+					for (int i = 0; i < aPlayers.size(); i++) 
 						SendNonBlocking(&sock, pckDie, aPlayers[i].ip, aPlayers[i].port);
-					}
 
 				}
 				break;
@@ -311,11 +301,19 @@ int main() {
 				break;
 			}
 
+			// Si ya se han conectado todos los jugadores les avisamos que empieza la partida
+			if (aPlayers.size() == totalPlayers && !sendInit) {
+				for (int i = 0; i < aPlayers.size(); i++) {
+					sf::Packet p;
+					p << enumContador << initMessage;
+					SendNonBlocking(&sock, p, aPlayers[i].ip, aPlayers[i].port);
+					aPlayers[i].clock.restart();
+				}
+				sendInit = true;
+			}
+
 			// Enviamos el paquete de move a todos los jugadores cada Xms
 			if (clockMove.getElapsedTime().asMilliseconds() >= 100 && aAccum.size() > 0) {
-
-				//TODO iterar aAccum: comprobar que las posiciones sean validas y entonces iterar
-				//la lista de players y al jugador que coincida la id enviar ACKMOVE y a los otros MOVE (enviar con bool isValid)
 
 				for (int i = 0; i < aPlayers.size(); i++) {
 					if (aPlayers[i].connected)
@@ -330,9 +328,8 @@ int main() {
 			if (clockNewPlayer.getElapsedTime().asMilliseconds() >= 200) {
 
 				for (int i = 0; i < aPlayers.size(); i++) {
-					if (!aPlayers[i].aCriticals.empty()) {
+					if (!aPlayers[i].aCriticals.empty()) 
 						SendNonBlocking(&sock, aPlayers[i].aCriticals.begin()->second, aPlayers[i].ip, aPlayers[i].port);
-					}
 				}
 
 				clockNewPlayer.restart();
@@ -361,9 +358,8 @@ bool FindPlayer(unsigned short portRem) {
 void SendNonBlocking(sf::UdpSocket* socket, sf::Packet packet, sf::IpAddress ip, unsigned short port) {
 	sf::Socket::Status status = socket->send(packet, ip, port);
 
-	while (status == sf::Socket::Partial) {
+	while (status == sf::Socket::Partial) 
 		status = socket->send(packet, ip, port);
-	}
 }
 
 sf::Packet& operator<<(sf::Packet& packet, std::vector<int>& vec) {

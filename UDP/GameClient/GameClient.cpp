@@ -20,7 +20,7 @@ std::list<Accum> aAccum;
 sf::Vector2f ballPos;
 std::string strEP;
 int idmove = 0, deltax = 0, deltay = 0, idWinner = 0, speed = 2, interSpeed = 2, interTime = 4;
-bool hello = false, initPlay = true, disconnected = false, empezarPartida = false, disappearText,
+bool hello = false, initPlay = false, disconnected = false, empezarPartida = false, disappearText,
 winner = false, ballPositioning = true, activarPerdida;
 
 // Funciones
@@ -98,7 +98,6 @@ void DibujaSFML() {
 			case sf::Event::KeyReleased:
 
 				if (initPlay && aPlayers[0].connected) {
-
 					if (event.key.code == sf::Keyboard::Space) 
 						speed = 2;
 				}
@@ -172,18 +171,6 @@ void DibujaSFML() {
 						window.setTitle("Slither.io - Jugador " + std::to_string(myId) + " Score: " + std::to_string(myPlayer.score));
 						hello = true;
 					}
-
-					//if (activarPerdida) {
-					//	float rndPacketLoss = GetRandomFloat();
-					//	if (rndPacketLoss < PERCENT_PACKETLOSS) {
-					//		InputMemoryBitStream imbs(_message, bytesReceived);
-					//		enum PacketType pt = PacketType::EMPTY;
-					//		imbs.Read(&pt, 3);
-					//		std::cout << rndPacketLoss << "Simulamos que se pierde msg de tipo " << pt << " - " << std::endl;
-					//		return -1;
-					//	}
-					//}
-
 				}
 				break;
 
@@ -225,7 +212,7 @@ void DibujaSFML() {
 
 					strEP += "  ";
 					pck >> strEP;
-
+					initPlay = true;
 					empezarPartida = true;
 					stclock.restart();
 				}
@@ -296,12 +283,17 @@ void DibujaSFML() {
 				break;
 
 				case RECEIVEBALL: {
-				
-					if (!ballPositioning) {
-						pck >> ballPos.x >> ballPos.y;
-						std::cout << "BALL " << ballPos.x << " " << ballPos.y << std::endl;
-						ballPositioning = true;
+
+					int id;
+					int sizeY;
+					pck >> ballPos.x >> ballPos.y >> id >> sizeY;
+
+					for (int i = 0; i < aPlayers.size(); i++) {
+						if (id == aPlayers[i].ID)
+							aPlayers[i].size.y = sizeY;
 					}
+
+					ballPositioning = true;
 				}
 				break;
 
@@ -387,10 +379,8 @@ void DibujaSFML() {
 		DrawSprite(window, "bg.png", 1.f, sf::Vector2f(0.f, 0.f));
 
 		// Bola
-		if (disappearText && !winner) {
+		if (disappearText && !winner) 
 			DrawBall(window, ballPos);
-			//DrawSprite(window, "ball.png", 1.f, ballPos);
-		}
 
 		// Pintar jugadores
 		if (aPlayers.size() > 0) {
@@ -408,14 +398,13 @@ void DibujaSFML() {
 		// Si el jugador se mueve enviamos cada Xms una lista con toda la acumulación a servidor (acumulamos cada vez que se pulsa una tecla)
 		if (empezarPartida && clockMove.getElapsedTime().asMilliseconds() >= 200 && (deltax != 0 || deltay != 0)) {
 
-			if (abs((float)aPlayers[0].pos.x - ballPos.x) < 25.f && abs((float)aPlayers[0].pos.y - ballPos.y) < 25.f && (ballPositioning)) {
+			if (abs((float)aPlayers[0].pos.x - ballPos.x) < 25.f && abs((float)aPlayers[0].pos.y - ballPos.y) < 25.f && ballPositioning) {
 				sf::Packet pa;
 				enum PacketType enumBall = PacketType::GETBALL;
 				pa << enumBall << aPlayers[0].ID;
 				sock.send(pa, IP_SERVER, PORT_SERVER);
 				aPlayers[0].score++;
 				window.setTitle("Slither.io - Jugador " + std::to_string(aPlayers[0].ID) + " Score: " + std::to_string(aPlayers[0].score));
-				aPlayers[0].size.y += 20;
 				std::cout << "Has puntuado! Tienes un total de " << aPlayers[0].score << " puntos!" << std::endl;
 				ballPositioning = false;
 			}
@@ -433,6 +422,7 @@ void DibujaSFML() {
 			sf::Packet pack = accum.AccumPacket();
 			sock.send(pack, IP_SERVER, PORT_SERVER);
 
+			// Reset
 			deltax = 0;
 			deltay = 0;
 			clockMove.restart();
