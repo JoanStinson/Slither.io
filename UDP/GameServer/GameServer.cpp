@@ -10,7 +10,7 @@
 #include <time.h>   
 
 #define MAX_SCORE 5
-#define TIME_DISCONNECT_PLAYER 60 // segundos
+#define TIME_DISCONNECT_PLAYER 180 // segundos
 
 // Variables
 std::vector<Player> aPlayers;
@@ -213,28 +213,46 @@ int main() {
 					aPlayers[id-1].pos.y = aAccum[id-1].posy;
 
 					// Verificamos que sea una posición válida y construimos el paquete (solo del jugador que se ha movido)
-					// Para enviarlo a los demás jugadores cada 100 ms para reducir tráfico
+					// Para enviarlo a los demás jugadores cada Xms para reducir tráfico
 					if (aPlayers[id-1].pos.x == -1 || aPlayers[id-1].pos.y == -1) 
 						break;
 					std::cout << "Se intenta la pos (" << aPlayers[id-1].pos.x << ", " << aPlayers[id - 1].pos.y << ")" << std::endl;
 
 					// Si la posición es valida
-					bool move = true;
+					bool isValid;
 					if ((aPlayers[id-1].pos.y >= 0 && aPlayers[id-1].pos.y <= 540) && aPlayers[id - 1].pos.x >= 0 && aPlayers[id - 1].pos.x <= 740) {
 						std::cout << "La pos (" << aPlayers[id-1].pos.x << ", " << aPlayers[id-1].pos.y << ") es valida" << std::endl;
+						isValid = true;
 
-						// Notificamos a ese jugador que es valida
+						// Paquete move para los demás jugadores (para que actualizen su copia del juego)
 						enum PacketType enumSend = PacketType::MOVE;
-						pckSendMove << enumSend << move << size << aPlayers[id - 1].ID;
+						pckSendMove << enumSend << isValid << size << aPlayers[id - 1].ID;
 						pckSendMove << aPlayers[id - 1].pos.x << aPlayers[id - 1].pos.y;
+
+						// Paquete para el jugador que se ha movido a modo de ACK
+						enum PacketType enumm = PacketType::ACKMOVE;
+						sf::Packet newp;
+						newp << enumm << isValid << aPlayers[id - 1].pos.x << aPlayers[id - 1].pos.y;
+						SendNonBlocking(&sock, newp, aPlayers[id-1].ip, aPlayers[id-1].port);
 					}
-					// Si la posición NO es valida
+					// Si la posición NO es valida, le devolvemos a la anterior
 					else {
 						std::cout << "La pos (" << aPlayers[id - 1].pos.x << ", " << aPlayers[id - 1].pos.y << ") NO es valida!" << std::endl;
-						move = false;
+						isValid = false;
+
+						// Paquete move para los demás jugadores (para que actualizen su copia del juego)
 						enum PacketType enumSend = PacketType::MOVE;
-						pckSendMove << enumSend << move << size << aPlayers[id - 1].ID;
+						pckSendMove << enumSend << isValid << size << aPlayers[id - 1].ID;
 						pckSendMove << aPlayers[id - 1].pos.x << aPlayers[id - 1].pos.y;
+
+						// Paquete para el jugador que se ha movido a modo de ACK
+						enum PacketType enumm = PacketType::ACKMOVE;
+						sf::Packet newp;
+						newp << enumm << isValid;
+						int px = pos.x - deltax;
+						int py = pos.y - deltay;
+						newp << px << py;
+						SendNonBlocking(&sock, newp, aPlayers[id - 1].ip, aPlayers[id - 1].port);
 					}
 
 					aPlayers[id - 1].clock.restart();

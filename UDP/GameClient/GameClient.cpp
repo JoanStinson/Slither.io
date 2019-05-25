@@ -234,8 +234,9 @@ void DibujaSFML() {
 					pck >> valid >> size >> id;
 
 					// Si es valida la posición actualizamos el jugador que se ha movido
+					// Pero si es valida, no actualizamos la pos del jugador local aPlayers[0] ya que por predicción ya se ha movido
 					if (valid) {
-						for (int i = 0; i < size; i++) {
+						for (int i = 1; i < size; i++) {
 							if (aPlayers[i].ID == id)
 								pck >> aPlayers[i].pos.x >> aPlayers[i].pos.y;
 						}
@@ -253,10 +254,20 @@ void DibujaSFML() {
 				// Confirmación desde servidor que la pos del jugador local es valida o no
 				case ACKMOVE: {
 
+					bool valid;
+					int posx;
+					int posy;
+					pck >> valid >> posx >> posy;
+
 					// Si la pos es valida no hacemos nada, ya que al usar predicción el jugador ya se haya en esa pos
-
+					if (valid)
+						std::cout << "La pos es valida!" << std::endl;
 					// Si la pos NO es valida, devolvemos al jugador a la pos anterior
-
+					else {
+						std::cout << "La pos NO es valida! Vuelves a la anterior!" << std::endl;
+						aPlayers[0].pos.x = posx;
+						aPlayers[0].pos.y = posy;
+					}
 				}
 				break;
 
