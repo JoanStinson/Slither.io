@@ -11,6 +11,7 @@ struct Player {
 
 	std::map<int, sf::Packet> aCriticals;
 	sf::Vector2i pos;
+	sf::Vector2i newPos;
 	sf::Vector2i size = sf::Vector2i(50, 100);
 	sf::Color color;
 	sf::Clock clock;
@@ -18,4 +19,5 @@ struct Player {
 	int score = 0;
 	bool connected = false;
 	bool dead = false;
+	bool isNewPos = true;
 };

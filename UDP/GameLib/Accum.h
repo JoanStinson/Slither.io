@@ -8,7 +8,7 @@ public:
 
 	Accum();
 	~Accum();
-	Accum(int id, int idmove, int deltax, int deltay, int posx, int posy);
+	Accum(int id, int idmove, int deltax, int deltay, int posx, int posy, int speed);
 	sf::Packet AccumPacket();
 
 	int id;
@@ -18,5 +18,6 @@ public:
 	int deltay;
 	int posx;
 	int posy;
+	int speed;
 };
 

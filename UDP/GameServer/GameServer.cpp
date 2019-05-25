@@ -17,13 +17,13 @@ std::vector<Player> aPlayers;
 std::vector<Accum> aAccum;
 sf::Vector2f ballPos;
 sf::Vector2i pos;
-int idJugador = 1, initPosX = 40, initPosY = 450, id, size = 0, deltax, deltay, idnum; 
+int idJugador = 1, initPosX = 40, initPosY = 450, id, size = 0, deltax, deltay, idmove; 
 
 // Funciones
 bool FindPlayer(unsigned short portRem);
 void SendNonBlocking(sf::UdpSocket* socket, sf::Packet packet, sf::IpAddress ip, unsigned short port);
 sf::Packet& operator<<(sf::Packet& packet, std::vector<int>& vec);
-void ActualizarAccum(int id, int idnum, int deltax, int deltay, int posx, int posy);
+void ActualizarAccum(int id, int idnum, int deltax, int deltay, int posx, int posy, int speed);
 float RandomFloat(float a, float b);
 
 // MAIN
@@ -56,7 +56,7 @@ int main() {
 					for (int j = 0; j < size; j++)
 						SendNonBlocking(&sock, pckDisconnectPlayer, aPlayers[j].ip, aPlayers[j].port);
 
-					aAccum.erase(aAccum.begin() + i);
+					//aAccum.erase(aAccum.begin() + i);
 				}
 			}
 		}
@@ -97,7 +97,7 @@ int main() {
 						aPlayers.push_back(firstPlayer);
 						size = aPlayers.size();
 
-						Accum accum(idJugador, 1, 0, 0, 0, 0);
+						Accum accum(idJugador, 1, 0, 0, 0, 0, 0);
 						aAccum.push_back(accum);
 
 						// Le enviamos su información
@@ -135,7 +135,7 @@ int main() {
 							aPlayers.push_back(newPlayer);
 							size = aPlayers.size();
 
-							Accum accum(idJugador, 1, 0, 0, 0, 0);
+							Accum accum(idJugador, 1, 0, 0, 0, 0, 0);
 							aAccum.push_back(accum);
 
 							// Enviamos su información y los jugadores anteriores
@@ -203,10 +203,10 @@ int main() {
 
 				case MOVE: {
 
-					//TODO hacer push_back de accum
+					int speed = 0;
 					size = aPlayers.size();
-					pckReceive >> deltax >> deltay >> pos.x >> pos.y >> id >> idnum;
-					ActualizarAccum(id - 1, idnum, deltax, deltay, pos.x, pos.y);
+					pckReceive >> id >> idmove >> deltax >> deltay >> pos.x >> pos.y >> speed;
+					ActualizarAccum(id - 1, idmove, deltax, deltay, pos.x, pos.y, speed);
 
 					// Actualizamos la lista de jugadores del servidor con los agrupados del jugador
 					aPlayers[id-1].pos.x = aAccum[id-1].posx;
@@ -226,7 +226,7 @@ int main() {
 
 						// Paquete move para los demás jugadores (para que actualizen su copia del juego)
 						enum PacketType enumSend = PacketType::MOVE;
-						pckSendMove << enumSend << isValid << size << aPlayers[id - 1].ID;
+						pckSendMove << enumSend << isValid << size << aPlayers[id - 1].ID << speed;
 						pckSendMove << aPlayers[id - 1].pos.x << aPlayers[id - 1].pos.y;
 
 						// Paquete para el jugador que se ha movido a modo de ACK
@@ -242,7 +242,7 @@ int main() {
 
 						// Paquete move para los demás jugadores (para que actualizen su copia del juego)
 						enum PacketType enumSend = PacketType::MOVE;
-						pckSendMove << enumSend << isValid << size << aPlayers[id - 1].ID;
+						pckSendMove << enumSend << isValid << size << aPlayers[id - 1].ID << speed;
 						pckSendMove << aPlayers[id - 1].pos.x << aPlayers[id - 1].pos.y;
 
 						// Paquete para el jugador que se ha movido a modo de ACK
@@ -375,12 +375,13 @@ sf::Packet& operator<<(sf::Packet& packet, std::vector<int>& vec) {
 	return packet;
 }
 
-void ActualizarAccum(int id, int idnum, int deltax, int deltay, int posx, int posy) {
+void ActualizarAccum(int id, int idnum, int deltax, int deltay, int posx, int posy, int speed) {
 	aAccum[id].idmove = idnum;
 	aAccum[id].deltax += deltax;
 	aAccum[id].deltay += deltay;
 	aAccum[id].posx = posx;
 	aAccum[id].posy = posy;
+	aAccum[id].speed = speed;
 }
 
 float RandomFloat(float a, float b) {

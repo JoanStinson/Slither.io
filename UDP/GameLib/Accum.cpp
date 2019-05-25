@@ -4,13 +4,14 @@ Accum::Accum() {}
 
 Accum::~Accum() {}
 
-Accum::Accum(int id, int idmove, int deltax, int deltay, int posx, int posy) {
+Accum::Accum(int id, int idmove, int deltax, int deltay, int posx, int posy, int speed) {
 	this->id = id;
 	this->idmove = idmove;
 	this->deltax = deltax;
 	this->deltay = deltay;
 	this->posx = posx;
 	this->posy = posy;
+	this->speed = speed;
 }
 
 sf::Packet Accum::AccumPacket() {
@@ -20,6 +21,6 @@ sf::Packet Accum::AccumPacket() {
 	posx += deltax;
 	posy += deltay;
 
-	packet << enumContador << deltax << deltay << posx << posy << id << idmove;
+	packet << enumContador << id << idmove << deltax << deltay << posx << posy << speed;
 	return packet;
 }

@@ -19,7 +19,7 @@ std::vector<Player> aPlayers;
 std::list<Accum> aAccum;
 sf::Vector2f ballPos;
 std::string strEP;
-int idmove = 0, deltax = 0, deltay = 0, idWinner = 0, speed = 2;
+int idmove = 0, deltax = 0, deltay = 0, idWinner = 0, speed = 2, interSpeed = 2, interTime = 4;
 bool hello = false, initPlay = true, disconnected = false, empezarPartida = false, disappearText,
 winner = false, ballPositioning = true, activarPerdida;
 
@@ -44,6 +44,7 @@ void DibujaSFML() {
 	sf::Clock clDisconnected;
 	sf::Clock stclock;
 	sf::Clock clockMove;
+	sf::Clock interpolation;
 	sf::RenderWindow window(sf::VideoMode(800, 600), "Cargando...");
 
 	while (window.isOpen()) {
@@ -148,6 +149,8 @@ void DibujaSFML() {
 						myPlayer.ID = myId;
 						myPlayer.pos.x = myPosX;
 						myPlayer.pos.y = myPosY;
+						myPlayer.newPos.x = myPosX;
+						myPlayer.newPos.y = myPosY;
 						myPlayer.connected = true;
 						myPlayer.color = sf::Color::Blue;
 						aPlayers.push_back(myPlayer);
@@ -195,6 +198,8 @@ void DibujaSFML() {
 					newPlayer.ID = id;
 					newPlayer.pos.x = posx;
 					newPlayer.pos.y = posy;
+					newPlayer.newPos.x = posx;
+					newPlayer.newPos.y = posy;
 					newPlayer.connected = true;
 					newPlayer.color = sf::Color::Red;
 
@@ -231,14 +236,17 @@ void DibujaSFML() {
 					bool valid;
 					int size;
 					int id;
-					pck >> valid >> size >> id;
-
+					int spd;
+					pck >> valid >> size >> id >> spd;
+					interSpeed = spd;
 					// Si es valida la posición actualizamos el jugador que se ha movido
 					// Pero si es valida, no actualizamos la pos del jugador local aPlayers[0] ya que por predicción ya se ha movido
 					if (valid) {
 						for (int i = 1; i < size; i++) {
-							if (aPlayers[i].ID == id)
-								pck >> aPlayers[i].pos.x >> aPlayers[i].pos.y;
+							if (aPlayers[i].ID == id) {
+								pck >> aPlayers[i].newPos.x >> aPlayers[i].newPos.y;
+								aPlayers[i].isNewPos = false;
+							}	
 						}
 					}
 					// Si no, no lo actualizamos y mostramos mensaje por pantalla
@@ -325,6 +333,28 @@ void DibujaSFML() {
 
 		}
 
+		// Interpolación
+		if (interpolation.getElapsedTime().asMilliseconds() >= interTime) {
+
+			for (int i = 1; i < aPlayers.size(); i++) { // el jugador aPlayers[0] es el local, por tanto, no lo interpolamos
+
+				if (aPlayers[i].pos != aPlayers[i].newPos && !aPlayers[i].isNewPos) {
+
+					if (aPlayers[i].pos.x > aPlayers[i].newPos.x)
+						aPlayers[i].pos.x -= interSpeed;
+					else if (aPlayers[i].pos.x < aPlayers[i].newPos.x)
+						aPlayers[i].pos.x += interSpeed;
+					if (aPlayers[i].pos.y > aPlayers[i].newPos.y)
+						aPlayers[i].pos.y -= interSpeed;
+					else if (aPlayers[i].pos.y < aPlayers[i].newPos.y)
+						aPlayers[i].pos.y += interSpeed;
+				}
+			}
+
+			interpolation.restart();
+		}
+
+
 		window.clear();
 
 		if (disconnected) {
@@ -400,7 +430,7 @@ void DibujaSFML() {
 
 			std::cout << "El jugador " << aPlayers[0].ID << " se ha movido! Delta Pos (" << deltax << ", " << deltay << ") PosReal (" << aPlayers[0].pos.x << ", " << aPlayers[0].pos.y << ")" << std::endl;
 
-			Accum accum(aPlayers[0].ID, idmove, deltax, deltay, aPlayers[0].pos.x, aPlayers[0].pos.y);
+			Accum accum(aPlayers[0].ID, idmove, deltax, deltay, aPlayers[0].pos.x, aPlayers[0].pos.y, speed);
 			aAccum.push_back(accum);
 
 			// MOVE
