@@ -3,7 +3,7 @@
 #include <SFML\Network.hpp>
 #include <iostream>
 
-enum PacketType { HELLO, WELCOME, NEWPLAYER, CONTADOR, MOVE, PING, GETBALL, RECEIVEBALL, FINDEPARTIDA, ACK, DIE };
+enum PacketType { HELLO, WELCOME, NEWPLAYER, CONTADOR, MOVE, PING, GETBALL, RECEIVEBALL, FINDEPARTIDA, ACK, ACKMOVE, DIE };
 
 struct Player {
 	sf::IpAddress ip;

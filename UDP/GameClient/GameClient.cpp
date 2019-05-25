@@ -225,6 +225,7 @@ void DibujaSFML() {
 				}
 				break;
 
+				// Actualizar posiciones validas de los otros jugadores
 				case MOVE: {
 				
 					bool valid;
@@ -246,6 +247,16 @@ void DibujaSFML() {
 						pck >> posx >> posy;
 						std::cout << "La pos (" << posx << ", " << posy << ") NO es valida!" << std::endl;
 					}
+				}
+				break;
+
+				// Confirmación desde servidor que la pos del jugador local es valida o no
+				case ACKMOVE: {
+
+					// Si la pos es valida no hacemos nada, ya que al usar predicción el jugador ya se haya en esa pos
+
+					// Si la pos NO es valida, devolvemos al jugador a la pos anterior
+
 				}
 				break;
 
@@ -357,7 +368,7 @@ void DibujaSFML() {
 		if (empezarPartida)
 			DrawTextEP(window, stclock);
 
-		// Si el jugador se mueve enviamos cada 200ms una lista con toda la acumulación a servidor (acumulamos cada vez que se pulsa una tecla)
+		// Si el jugador se mueve enviamos cada Xms una lista con toda la acumulación a servidor (acumulamos cada vez que se pulsa una tecla)
 		if (empezarPartida && clockMove.getElapsedTime().asMilliseconds() >= 200 && (deltax != 0 || deltay != 0)) {
 
 			if (abs((float)aPlayers[0].pos.x - ballPos.x) < 15.f && abs((float)aPlayers[0].pos.y - ballPos.y) < 15.f && (ballPositioning)) {
@@ -389,7 +400,7 @@ void DibujaSFML() {
 			deltay = 0;
 			clockMove.restart();
 
-			// Mirar colisions
+			// Mirar colisiones
 			if (aPlayers.size() > 1 && !aPlayers[0].dead) {
 				for (int i = 1; i < aPlayers.size(); i++) {
 					if (!aPlayers[i].dead) {

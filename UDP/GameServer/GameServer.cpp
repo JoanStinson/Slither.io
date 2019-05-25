@@ -10,7 +10,7 @@
 #include <time.h>   
 
 #define MAX_SCORE 5
-#define TIME_DISCONNECT_PLAYER 60
+#define TIME_DISCONNECT_PLAYER 60 // segundos
 
 // Variables
 std::vector<Player> aPlayers;
@@ -203,6 +203,7 @@ int main() {
 
 				case MOVE: {
 
+					//TODO hacer push_back de accum
 					size = aPlayers.size();
 					pckReceive >> deltax >> deltay >> pos.x >> pos.y >> id >> idnum;
 					ActualizarAccum(id - 1, idnum, deltax, deltay, pos.x, pos.y);
@@ -294,8 +295,11 @@ int main() {
 				break;
 			}
 
-			// Enviamos el paquete de move a todos los jugadores cada 100 ms
+			// Enviamos el paquete de move a todos los jugadores cada Xms
 			if (clockMove.getElapsedTime().asMilliseconds() >= 100 && aAccum.size() > 0) {
+
+				//TODO iterar aAccum: comprobar que las posiciones sean validas y entonces iterar
+				//la lista de players y al jugador que coincida la id enviar ACKMOVE y a los otros MOVE (enviar con bool isValid)
 
 				for (int i = 0; i < aPlayers.size(); i++) {
 					if (aPlayers[i].connected)
