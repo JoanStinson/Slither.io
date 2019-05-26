@@ -19,7 +19,7 @@ std::vector<Player> aPlayers;
 std::list<Accum> aAccum;
 sf::Vector2f ballPos;
 std::string strEP;
-int idmove = 0, deltax = 0, deltay = 0, idWinner = 0, speed = 2, interSpeed = 2, interTime = 4;
+int idmove = 0, deltax = 0, deltay = 0, idWinner = 0, speed = 2, interSpeed = 2, interTime = 5;
 bool hello = false, initPlay = false, disconnected = false, empezarPartida = false, disappearText,
 winner = false, ballPositioning = true, activarPerdida;
 
@@ -108,9 +108,9 @@ void DibujaSFML() {
 			}
 		}
 
-		// Mientras no recibimos señal por parte del servidor enviamos hello cada 550 ms
+		// Mientras no recibimos señal por parte del servidor enviamos hello cada Xms
 		if (!hello) {
-			if (clCount.getElapsedTime().asMilliseconds() >= 550) {
+			if (clCount.getElapsedTime().asMilliseconds() >= 500) {
 				sf::Packet pckHello;
 				enum PacketType enumSend = PacketType::HELLO;
 				pckHello << enumSend;
@@ -396,7 +396,7 @@ void DibujaSFML() {
 			DrawTextEP(window, stclock);
 
 		// Si el jugador se mueve enviamos cada Xms una lista con toda la acumulación a servidor (acumulamos cada vez que se pulsa una tecla)
-		if (empezarPartida && clockMove.getElapsedTime().asMilliseconds() >= 200 && (deltax != 0 || deltay != 0)) {
+		if (empezarPartida && clockMove.getElapsedTime().asMilliseconds() >= 50 && (deltax != 0 || deltay != 0)) {
 
 			if (abs((float)aPlayers[0].pos.x - ballPos.x) < 25.f && abs((float)aPlayers[0].pos.y - ballPos.y) < 25.f && ballPositioning) {
 				sf::Packet pa;
