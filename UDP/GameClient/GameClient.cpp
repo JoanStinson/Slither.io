@@ -396,7 +396,7 @@ void DibujaSFML() {
 			DrawTextEP(window, stclock);
 
 		// Si el jugador se mueve enviamos cada Xms una lista con toda la acumulación a servidor (acumulamos cada vez que se pulsa una tecla)
-		if (empezarPartida && clockMove.getElapsedTime().asMilliseconds() >= 50 && (deltax != 0 || deltay != 0)) {
+		if (empezarPartida && clockMove.getElapsedTime().asMilliseconds() >= 100 && (deltax != 0 || deltay != 0)) {
 
 			if (abs((float)aPlayers[0].pos.x - ballPos.x) < 25.f && abs((float)aPlayers[0].pos.y - ballPos.y) < 25.f && ballPositioning) {
 				sf::Packet pa;

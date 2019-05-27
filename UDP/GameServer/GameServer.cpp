@@ -9,7 +9,7 @@
 #include <stdlib.h>     
 #include <time.h>   
 
-#define MAX_SCORE 5
+#define MAX_SCORE 3
 #define TIME_DISCONNECT_PLAYER 180 // segundos
 
 // Variables
@@ -260,7 +260,7 @@ int main() {
 						sf::Packet pp;
 						pp << pa << id;
 
-						for (unsigned int i = 0; i < size; i++)
+						for (unsigned int i = 0; i < aPlayers.size(); i++)
 							sock.send(pp, aPlayers[i].ip, aPlayers[i].port);
 					}
 					// Se genera una nueva bola después de que un jugador coja una
