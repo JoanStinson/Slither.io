@@ -1,5 +1,4 @@
-# C++ SFML Slither.io
+# C++ SFML UDP Sockets Slither.io Game
 
-C++ SFML Slither.io game up to any number of players using UDP sockets and Client/Server network structure.
-
+## C++ SFML UDP Sockets Slither.io Game: Up to any number of players using a Client/Server network structure.
 ![](slither.gif)
